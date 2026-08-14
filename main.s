@@ -25,6 +25,7 @@ BUTTON_RIGHT =  %00000001
 WILL_LOAD_LEVEL = 0
 LEVEL_READY = 1
 LEVEL_LOADED = 2
+SCROLL_SPEED = 2
 
 .zeropage
     scratch: .res $10
@@ -40,8 +41,29 @@ LEVEL_LOADED = 2
     current_ppu_ctrl: .res 1
     current_level: .res 1
     game_state: .res 1
+    controller_input_prev: .res 1
+    controller_input: .res 1
+    buttons_pressed: .res 1
+    buttons_released: .res 1
+    vram_buffer_index: .res 1
 
 .bss
+    object_ids: .res $10
+    object_x_positions: .res $10
+    object_y_positions: .res $10
+    object_x_page_subpixels: .res $10
+    object_y_page_subpixels: .res $10
+    object_x_velocities: .res $10
+    object_y_velocities: .res $10
+    object_flags: .res $10
+    object_animations_ids: .res $10
+    object_animations_frames: .res $10
+    object_animation_timers: .res $10
+    object_variables_0: .res $10
+    object_variables_1: .res $10
+    object_variables_2: .res $10
+    object_variables_3: .res $10
+    object_variables_4: .res $10
     tile_buffer_1: .res 30
     tile_buffer_2: .res 30
     tile_buffer_3: .res 30
@@ -198,6 +220,35 @@ nmi:
     lda #$02 ; Push sprites to OAM
     sta OAMDMA
 
+@push_vram_updates:
+    tsx
+    stx scratch
+    ldx #$FF
+    txs
+    @pop_slide:
+    pla
+    beq @end_pop_slide
+    tax
+    pla
+    sta PPUCTRL
+    bit PPUSTATUS
+    pla
+    sta PPUADDR
+    pla
+    sta PPUADDR
+    @loop:
+    pla
+    sta PPUDATA
+    dex
+    bne @loop
+    jmp @pop_slide
+    @end_pop_slide:
+    ldx scratch
+    txs
+    lda #$00
+    sta $0100
+    sta vram_buffer_index
+
 @push_palettes_to_ppu:
     lda current_ppu_ctrl
     and #%11111011 ; Set PPU increment to right
@@ -244,8 +295,353 @@ nmi:
 
 game_logic:
     inc frame_count
+    jsr read_controllers
+    jsr handle_scroll
     dec frame_done ; Set to 255
     rti
+
+; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07
+handle_scroll:
+    ldx current_level ; Store this for later
+    lda LevelLengths, x
+    sta scratch + 2
+    lda x_scroll 
+    lsr ; We care about 8 pixel intervals, so 3 right shifts
+    lsr
+    lsr
+    sta scratch ; Store scroll before
+    lda controller_input
+    and #BUTTON_RIGHT
+    beq @not_pressing_right
+    lda #$01
+    sta scratch + 4 ; Store that we're scrolling right
+    lda current_page ; Check if we're already at the end
+    dec scratch + 2
+    cmp scratch + 2
+    bcc :+
+    rts ; Return early if we're already at the right edge
+    :
+    inc scratch + 2
+    lda x_scroll
+    clc
+    adc #SCROLL_SPEED
+    sta x_scroll
+    bcc @no_overflow
+    lda current_ppu_ctrl ; Switch to the other nametable
+    eor #$00000001
+    sta current_ppu_ctrl
+    inc current_page ; Handle overflow
+    inc current_page
+    lda current_page
+    cmp scratch + 2 ; Check if we reached right edge
+    bcc @not_at_edge
+    dec current_page 
+    lda #$00 ; Set scroll to end if we did
+    sta x_scroll
+    rts ; I think it should be okay to return since we don't need to load anything
+    @not_at_edge:
+    dec current_page
+    @no_overflow:
+    jmp @not_pressing_left
+    @not_pressing_right:
+    lda controller_input
+    and #BUTTON_LEFT
+    beq @not_pressing_left
+    lda #$00
+    sta scratch + 4 ; Store that we're scrolling left
+    lda x_scroll
+    sec
+    sbc #SCROLL_SPEED
+    sta x_scroll
+    bcs @not_pressing_left
+    lda current_page
+    bne @decrement_page ; Check if we reached left edge of screen
+    lda #$00
+    sta x_scroll
+    rts ; Early return because nothing needs to be loaded
+    @decrement_page:
+    dec current_page
+    lda current_ppu_ctrl ; Switch to the other nametable
+    eor #$00000001
+    sta current_ppu_ctrl
+    @not_pressing_left:
+    ldx current_page
+    lda x_scroll ; Check if our scroll crossed an 8-pixel boundary
+    lsr
+    lsr
+    lsr
+    cmp scratch
+    bne @load_column
+    rts ; Return early if not
+    @load_column:
+    ldy scratch + 4
+    beq @will_scroll_left
+    inx
+    clc
+    adc #7
+    cmp #32
+    bcc :+
+    sbc #32
+    inx
+    ldy #$00
+    :    
+    jmp @after_determine_scroll_direction
+    @will_scroll_left:
+    ldy #$01
+    dex
+    clc
+    adc #24
+    cmp #32
+    bcc :+
+    sbc #32
+    inx
+    ldy #$00
+    :
+    @after_determine_scroll_direction:
+    sty scratch + 3
+    sta scratch + 4 ; Store column index
+    cpx scratch + 2 ; Check if we went out of bounds
+    bcc :+
+    rts ; Return early if we did
+    :
+    ldy vram_buffer_index
+    lda #30 ; One column of tiles
+    sta $0100, y 
+    iny
+    lda #%00000100 ; Set VRAM address increment to vertical
+    sta $0100, y
+    iny 
+    lda scratch + 4
+    sta $0101, y ; Store lower half of PPU address
+    lda current_ppu_ctrl ; Check base nametable address
+    and #%00000001
+    eor scratch + 3
+    beq :+
+    lda #$24
+    jmp :++
+    :
+    lda #$20
+    :
+    sta $0100, y
+    iny
+    iny
+    sty vram_buffer_index
+
+    ldy current_level
+    lda LevelTilePointersLow, y
+    sta scratch
+    lda LevelTilePointersHigh, y
+    sta scratch + 1
+    lda #$00
+    sta scratch + 5
+    clc
+    txa ; Get metametatile index
+    asl ; Each page has 64 meta meta tiles
+    rol scratch + 5
+    asl
+    rol scratch + 5
+    asl
+    rol scratch + 5
+    asl
+    rol scratch + 5
+    asl
+    rol scratch + 5
+    asl
+    rol scratch + 5
+    adc scratch
+    sta scratch
+    lda scratch + 5
+    adc scratch + 1
+    sta scratch + 1
+    lda scratch + 4
+    and #%11111100
+    asl
+    adc scratch
+    sta scratch
+    lda scratch + 1 ; I don't think this should cause a carry?
+    adc #$00 ; But better safe than sorry
+    sta scratch + 1
+    lda scratch + 4
+    and #%00000011
+    tay
+    beq @column_0
+    dey
+    beq @column_1
+    dey
+    beq @column_2
+    jmp load_column_3
+    @column_0:
+    jmp load_column_0
+    @column_1:
+    jmp load_column_1
+    @column_2:
+    jmp load_column_2
+
+.macro load_column_macro FirstMetaTile, SecondMetaTile, FirstTile, SecondTile
+    ldy #$00
+    @loop:
+    lda (scratch), y
+    sty scratch + 6
+    ldy vram_buffer_index
+    tax
+    stx scratch + 7
+    lda FirstMetaTile, x
+    sta scratch + 5
+    tax
+    lda FirstTile, x
+    sta $0100, y
+    iny
+    ldx scratch + 5
+    lda SecondTile, x
+    sta $0100, y
+    iny
+    ldx scratch + 7
+    lda SecondMetaTile, x
+    sta scratch + 5
+    tax
+    lda FirstTile, x
+    sta $0100, y
+    iny
+    ldx scratch + 5
+    lda SecondTile, x
+    sta $0100, y
+    iny
+    sty vram_buffer_index
+    ldy scratch + 6
+    iny
+    cpy #7
+    bcc @loop
+    lda (scratch), y ; Last one gets handled separately
+    ldy vram_buffer_index
+    tax
+    lda FirstMetaTile, x
+    sta scratch + 5
+    tax
+    lda FirstTile, x
+    sta $0100, y
+    iny
+    ldx scratch + 5
+    lda SecondTile, x
+    sta $0100, y
+    iny
+    sty vram_buffer_index
+.endmacro
+
+load_column_0:
+    load_column_macro MetaMetaTilesTopLeft, MetaMetaTilesBottomLeft, MetaTilesTopLeft, MetaTilesBottomLeft
+    lda #$00
+    sta $0100, y
+    rts
+
+load_column_1:
+    load_column_macro MetaMetaTilesTopLeft, MetaMetaTilesBottomLeft, MetaTilesTopRight, MetaTilesBottomRight
+    lda #$00
+    sta $0100, y
+    rts
+
+load_column_2:
+    load_column_macro MetaMetaTilesTopRight, MetaMetaTilesBottomRight, MetaTilesTopLeft, MetaTilesBottomLeft
+    lda #$00
+    sta $0100, y
+    rts
+
+load_column_3:
+    load_column_macro MetaMetaTilesTopRight, MetaMetaTilesBottomRight, MetaTilesTopRight, MetaTilesBottomRight
+    ; Load attributes
+    lda #2 ; Pair of attributes >:L
+    sta $0100, y 
+    sta $0100 + 6, y 
+    sta $0100 + 12, y 
+    sta $0100 + 18, y 
+    iny
+    lda #%00000100 ; Set VRAM address increment to vertical
+    sta $0100, y
+    sta $0100 + 6, y 
+    sta $0100 + 12, y 
+    sta $0100 + 18, y 
+    iny 
+    lda scratch + 4
+    lsr
+    lsr
+    clc
+    adc #$C0
+    sta $0101, y ; Store lower half of PPU address
+    adc #$08
+    sta $0101 + 6, y
+    adc #$08
+    sta $0101 + 12, y
+    adc #$08
+    sta $0101 + 18, y
+    lda current_ppu_ctrl ; Check base nametable address
+    and #%00000001
+    eor scratch + 3
+    beq :+
+    lda #$27
+    jmp :++
+    :
+    lda #$23
+    :
+    sta $0100, y
+    sta $0100 + 6, y 
+    sta $0100 + 12, y 
+    sta $0100 + 18, y 
+    iny
+    iny
+    sty vram_buffer_index 
+    ldy #$00
+    .repeat 2
+    .repeat 4, i
+    lda (scratch), y
+    sty scratch + 6
+    ldy vram_buffer_index
+    tax
+    lda MetaMetaTileAttributes, x
+    sta $0100 + i * 6, y
+    .if i < 3
+    ldy scratch + 6
+    iny
+    .endif
+    .endrepeat
+    iny
+    sty vram_buffer_index
+    ldy scratch + 6
+    iny
+    .endrepeat
+    ldy vram_buffer_index
+    tya
+    clc
+    adc #18
+    tay
+    sty vram_buffer_index
+    lda #$00
+    sta $0100, y
+    rts
+
+
+; Clobbers A
+read_controllers:
+    lda controller_input
+    sta controller_input_prev
+    lda #$01
+    sta JOY1
+    sta controller_input
+    lsr
+    sta JOY1
+    @loop:
+    lda JOY1
+    lsr
+    rol controller_input
+    bcc @loop
+    lda controller_input_prev
+    eor #$FF
+    and controller_input
+    sta buttons_pressed
+    lda controller_input
+    eor #$FF
+    and controller_input_prev
+    sta buttons_released
+    rts
+    
 
 ; Level number in A register
 ; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09
