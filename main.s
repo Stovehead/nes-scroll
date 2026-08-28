@@ -587,8 +587,9 @@ game_logic:
     :
     ldx scratch + 5
     @end_build_sprite_loop:
-    inx
     txa
+    clc
+    adc #$07
     and #$0F
     cmp scratch + 3
     beq :+
