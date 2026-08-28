@@ -50,6 +50,7 @@ OBJECT_IS_HIDDEN =      %00010000
     buttons_pressed: .res 1
     buttons_released: .res 1
     vram_buffer_index: .res 1
+    oam_offset: .res 1
 
 .bss
     object_ids: .res $10
@@ -333,7 +334,7 @@ game_logic:
     @start_step_code_loop:
     lda object_ids, x
     beq @end_step_code_loop ; Skip object 0 (invalid)
-    cpx NumObjects
+    cmp NumObjects
     bcs @end_step_code_loop ; Skip objects with indices that are out of bounds
     tay
     lda ObjectStepPointersLow, y
@@ -350,7 +351,8 @@ game_logic:
 
     ; Build sprites
     lda #$00
-    sta scratch + 2 ; Number of bytes in OAM we've used so far
+    sta oam_offset ; Number of bytes in OAM we've used so far
+    sta scratch + 2 ; Flag for if we've made any sprites
     lda frame_count
     and #$0F
     sta scratch + 3 ; Index to start from
@@ -380,8 +382,10 @@ game_logic:
     sta scratch + 4 ; Store number of sprites
     asl
     asl
+    sec
+    sbc #$01
     clc
-    adc scratch + 2
+    adc oam_offset
     bcc :+
     jmp @after_finish_build_sprites ; Don't try to do more than 64 sprites
     :
@@ -406,6 +410,7 @@ game_logic:
     iny
     lda (scratch), y
     sta scratch + 10 ; Store sprite attributes
+    sty scratch + 13 ; Store current index
     lda scratch + 8
     stx scratch + 6 ; Store current sprite index
     ldx scratch + 5
@@ -424,23 +429,52 @@ game_logic:
     lsr
     lsr
     lsr
+    sta scratch + 11
+    lda object_x_positions, x
+    sta scratch + 12
+    lda scratch + 8
+    cmp #%10000000
+    bcs @negative_x_offset
+    ; clc
+    adc scratch + 12
+    sta scratch + 12
+    lda scratch + 11
+    adc #$00
+    sta scratch + 11
+    jmp @after_add_offset
+    @negative_x_offset:
+    clc
+    adc scratch + 12
+    sta scratch + 12
+    lda scratch + 11
+    sbc #$00
+    sta scratch + 11
+    @after_add_offset:
     cmp current_page
-    bne :+
-    jmp @sprite_on_current_page
+    bcs :+
+    jmp @end_single_sprite_loop ; Skip if this sprite is on the previous page
     :
+    bne @check_sprite_on_next_page
+    lda scratch + 12
+    sec
+    sbc x_scroll
+    bcs :+
+    jmp @end_single_sprite_loop ; Skip if this sprite is behind the screen
+    :
+    jmp @after_determine_x_position
+    @check_sprite_on_next_page:
     sec
     sbc #$01
     cmp current_page
-    bne :+
-    jmp @sprite_on_next_page
+    beq :+
+    jmp @end_single_sprite_loop ; Skip if this sprite is not on the next page
     :
-    clc
-    adc #$02
-    cmp current_page
-    bne :+
-    jmp @sprite_on_previous_page
+    lda scratch + 12
+    sec
+    sbc x_scroll
+    bcc :+
+    jmp @end_single_sprite_loop ; Skip if this sprite is beyond the screen
     :
-    jmp @before_end_single_sprite_loop
     @after_determine_x_position:
     sta scratch + 8 ; Store sprite x offset
     lda scratch + 9
@@ -456,18 +490,18 @@ game_logic:
     sta scratch + 9
     :
     lda object_y_positions, x
+    clc
     adc scratch + 9
     bcc :+
-    jmp @before_end_single_sprite_loop ; Skip if this sprite ended up off screen
+    jmp @end_single_sprite_loop ; Skip if this sprite ended up off screen
     :
     sec
     sbc #$01 ; Account for the 1 pixel vertical offset
-    sty scratch + 11 ; Store current index
-    ldy scratch + 2
+    ldy oam_offset
     sta OAMBUFFER, y ; Store y position in OAM
     iny
     lda scratch + 7
-    sta OAMBUFFER, y
+    sta OAMBUFFER, y ; Store sprite index in OAM
     iny
     lda object_flags, x
     and #%11100000
@@ -477,11 +511,12 @@ game_logic:
     lda scratch + 8
     sta OAMBUFFER, y ; Store x position in OAM
     iny
-    sty scratch + 2
-    @before_end_single_sprite_loop:
-    ldy scratch + 11
-    ldx scratch + 6
+    sty oam_offset
+    lda #$01
+    sta scratch + 2
     @end_single_sprite_loop:
+    ldy scratch + 13
+    ldx scratch + 6
     inx
     cpx scratch + 4
     bcs :+
@@ -498,9 +533,12 @@ game_logic:
     jmp @start_build_sprite_loop ; Loop until we reach the one we started on
     :
     @after_finish_build_sprites:
+    ldy oam_offset
+    bne :+
+    lda scratch + 2
+    bne @after_ff_fill_loop
+    :
     lda #$FF
-    ldy scratch + 2
-    beq :+
     @start_ff_fill_loop:
     sta OAMBUFFER, y
     iny
@@ -508,101 +546,10 @@ game_logic:
     iny
     iny
     bne @start_ff_fill_loop
-    :
+    @after_ff_fill_loop:
 
     dec frame_done ; Set to 255
     rti
-
-    @sprite_on_current_page:
-    lda scratch + 8
-    cmp #%10000000
-    bcc @positive_offset_on_current_page
-    ; If offset is negative
-    lda object_x_positions, x
-    adc scratch + 8
-    bcc :+
-    jmp @before_end_single_sprite_loop ; Skip this sprite if the position is on the previous page
-    :
-    cmp x_scroll
-    bcs :+
-    ldx scratch + 6
-    jmp @before_end_single_sprite_loop ; Skip this sprite if the position is behind the camera
-    :
-    jmp @positive_offset_current_page_after
-    @positive_offset_on_current_page:
-    ; If offset is positive
-    lda object_x_positions, x
-    adc scratch + 8
-    bcc :++
-    cmp x_scroll
-    bcc :+
-    jmp @before_end_single_sprite_loop ; Skip this sprite if the position is beyond the camera
-    :
-    jmp @positive_offset_current_page_after
-    :
-    cmp x_scroll
-    bcs :+
-    jmp @before_end_single_sprite_loop ; Skip this sprite if the position is behind the camera
-    :
-    @positive_offset_current_page_after:
-    sec
-    sbc x_scroll
-    jmp @after_determine_x_position
-
-    @sprite_on_previous_page:
-    lda scratch + 8
-    cmp #%10000000
-    bcc @positive_offset_on_previous_page
-    jmp @before_end_single_sprite_loop ; Skip this sprite if the position is on the previous page
-    @positive_offset_on_previous_page:
-    ; If offset is positive
-    lda object_x_positions, x
-    adc scratch + 8
-    bcs :+
-    jmp @before_end_single_sprite_loop ; Skip this sprite if the position is on the previous page
-    :
-    cmp x_scroll
-    bcc :+
-    jmp @before_end_single_sprite_loop ; Skip this sprite if the position is behind the camera
-    :
-    sec
-    sbc x_scroll
-    jmp @after_determine_x_position
-
-    @sprite_on_next_page:
-    lda scratch + 8
-    cmp #%10000000
-    bcc @positive_offset_on_next_page
-    ; If offset is negative
-    lda object_x_positions, x
-    adc scratch + 8
-    bcc :++
-    cmp x_scroll
-    bcc :+
-    jmp @before_end_single_sprite_loop ; Skip this sprite if the position is behind the camera
-    :
-    jmp @positive_offset_next_page_after
-    :
-    cmp x_scroll
-    bcs :+
-    jmp @before_end_single_sprite_loop ; Skip this sprite if the position is beyond the camera
-    :
-    jmp @positive_offset_next_page_after
-    @positive_offset_on_next_page:
-    ; If offset is positive
-    lda object_x_positions, x
-    adc scratch + 8
-    bcs :+
-    jmp @before_end_single_sprite_loop ; Skip this sprite if the position is on the next page
-    :
-    cmp x_scroll
-    bcc :+
-    jmp @before_end_single_sprite_loop ; Skip this sprite if the position is beyond the camera
-    :
-    @positive_offset_next_page_after:
-    sec
-    sbc x_scroll
-    jmp @after_determine_x_position
 
 dynamic_jump:
     jmp (scratch)
@@ -1228,9 +1175,10 @@ ObjectStepPointersHigh:
 ; 1 byte for the number of sprites, 1 byte for width in pixels, 1 byte for height in pixels
 ; For each sprite, 1 byte for index, 1 byte for x offset, 1 byte for y offset, and 1 byte for attributes
 NumSpriteLayouts:
-    .byte $01
+    .byte $02
 .define SpriteLayoutPointers \
-    TestSpriteLayout0
+    TestSpriteLayout0, \
+    TestSpriteLayout1
 SpriteLayoutPointersLow:
     .lobytes SpriteLayoutPointers
 SpriteLayoutPointersHigh:
@@ -1253,12 +1201,12 @@ TestSpriteLayout0:
 
     .byte $05       ; Index
     .byte $00       ; X offset
-    .byte $08       ; Y offset
+    .byte $10       ; Y offset
     .byte %00000010 ; Attributes
 
     .byte $07       ; Index
     .byte $08       ; X offset
-    .byte $08       ; Y offset
+    .byte $10       ; Y offset
     .byte %00000011 ; Attributes
 
 TestSpriteLayout1:
@@ -1276,12 +1224,12 @@ TestSpriteLayout1:
 
     .byte $0D       ; Index
     .byte $00       ; X offset
-    .byte $08       ; Y offset
+    .byte $10       ; Y offset
     .byte %00000010 ; Attributes
 
     .byte $0F       ; Index
     .byte $08       ; X offset
-    .byte $08       ; Y offset
+    .byte $10       ; Y offset
     .byte %00000011 ; Attributes
 
 MetaTilesTopLeft:
