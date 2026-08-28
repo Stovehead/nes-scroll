@@ -62,13 +62,13 @@ OBJECT_IS_HIDDEN =      %00010000
     object_animations_ids: .res $10
     object_animations_frames: .res $10
     object_animation_timers: .res $10
+    object_current_metasprites: .res $10
     object_variables_0: .res $10
     object_variables_1: .res $10
     object_variables_2: .res $10
     object_variables_3: .res $10
     object_variables_4: .res $10
     object_variables_5: .res $10
-    object_variables_6: .res $10
     tile_buffer_1: .res 30
     tile_buffer_2: .res 30
     tile_buffer_3: .res 30
@@ -273,7 +273,7 @@ main:
     lda #$01
     ldx #$01
     :
-    sta object_animations_ids, x
+    sta object_current_metasprites, x
     inx
     inx
     cpx #16
@@ -430,7 +430,7 @@ game_logic:
     beq :+
     jmp @end_build_sprite_loop ; Skip if it's hidden
     :
-    lda object_animations_ids, x
+    lda object_current_metasprites, x
     cmp NumMetaSprites ; Check if the index is out of bounds
     bcc :+
     jmp @end_build_sprite_loop
