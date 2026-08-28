@@ -1222,6 +1222,73 @@ load_level:
     rti
 
 ; Object index in X
+play_animation:
+    lda object_animations_ids, x
+    cmp NumAnimations ; Bounds check
+    bcc :+
+    rts
+    :
+    lda object_animation_timers, x ; Check timer for current frame
+    bne @same_animation_frame ; If not 0, just decrease the timer
+    ldy object_animations_frames, x
+    inc object_animations_frames, x ; Else go to the next frame
+    lda AnimationLengths, y
+    and #%01111111 ; Remove loop bit
+    cmp object_animations_frames, x
+    bne @did_not_reach_animation_end
+    lda #$00
+    sta
+    @did_not_reach_animation_end:
+    ldy object_animations_frames, y ; Set animation timer for new frame
+    lda AnimationFrameLengthPointersLow 
+    sta scratch
+    lda AnimationFrameLengthPointersHigh
+    sta scratch + 1
+    lda (scratch), y
+    sta animationFrame
+    lda object_animations_frames
+
+    @same_animation_frame:
+    sec
+    sbc #$01
+    sta object_animation_timers, x
+    rts
+
+; Object index in X
+test_object_init:
+    rts
+
+; Object index in X
+test_object_step:
+    rts
+
+; Object index in X
+player_init:
+    lda #$10
+    sta object_x_positions, x
+    lda #176
+    sta object_y_positions, x
+    lda #$00
+    sta object_x_page_subpixels, x
+    sta object_y_page_subpixels, x
+    sta object_flags, x
+    sta object_animation_timers, x
+    sta object_animations_ids, x
+    sta object_variables_0, x
+    sta object_variables_1, x
+    sta object_variables_2, x
+    sta object_variables_3, x
+    sta object_variables_4, x
+    sta object_variables_5, x
+    lda #$FF
+    sta object_animations_frames, x
+    jsr play_animation
+    rts
+
+; Object index in X
+; Variables:
+; 0 - X Velocity
+; 1 - Y Velocity
 player_step:
     rts
 
@@ -1229,11 +1296,19 @@ NumObjects:
     .byte $02
 .define ObjectStepPointers \
     $0000, \
-    player_step
+    test_object_step
 ObjectStepPointersLow:
     .lobytes ObjectStepPointers
 ObjectStepPointersHigh:
     .hibytes ObjectStepPointers
+
+.define ObjectInitPointers \
+    $0000, \
+    test_object_init
+ObjectInitPointersLow:
+    .lobytes ObjectInitPointers
+ObjectInitPointersHigh:
+    .hibytes ObjectInitPointers
 
 ; Sprite layout structure:
 ; 1 byte for the number of sprites, 1 byte for width in pixels, 1 byte for height in pixels
@@ -1297,6 +1372,48 @@ TestMetaSprite1:
     .byte $08       ; X offset
     .byte $10       ; Y offset
     .byte %00000011 ; Attributes
+
+NumAnimations:
+    .byte $03
+.define AnimationFramePointers \
+    AnimPlayerIdleFrames, \
+    AnimPlayerWalkFrames, \
+    AnimPlayerJumpFrames
+AnimationFramePointersLow:
+    .lobytes AnimationFramePointers
+AnimationFramePointersHigh:
+    .hibytes AnimationFramePointers
+
+.define AnimationFrameLengthPointers \
+    AnimPlayerIdleLengths, \
+    AnimPlayerWalkLengths, \
+    AnimPlayerJumpLengths
+AnimationFrameLengthPointersLow:
+    .lobytes AnimationFrameLengthPointers
+AnimationFrameLengthPointersHigh:
+    .hibytes AnimationFrameLengthPointers
+
+; Highest bit determines whether animation loops or not
+AnimationLengths:
+    .byte 1, 128 + 4, 1
+
+AnimPlayerIdleFrames:
+    .byte $02
+
+AnimPlayerIdleLengths:
+    .byte $00
+
+AnimPlayerWalkFrames:
+    .byte $02, $03, $02, $04
+
+AnimPlayerWalkLengths:
+    .byte $02, $02, $02, $02
+
+AnimPlayerJumpFrames:
+    .byte $05
+
+AnimPlayerJumpLengths:
+    .byte $00
 
 MetaTilesTopLeft:
     .byte $00, $00, $0E, $14, $16, $00, $02, $07, $09, $42, $43, $00, $1F, $26, $28, $00, $34, $00, $3E, $00, $1B, $1D, $20, $25, $2E, $30, $31, $30, $2E, $3A, $3C, $3A
