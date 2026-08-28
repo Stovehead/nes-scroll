@@ -229,7 +229,70 @@ main:
     sta PPUCTRL
 
     lda #$01
-    sta object_ids
+    ldx #$00
+    :
+    sta object_ids, x
+    inx
+    cpx #16
+    bcc :-
+    lda #$08
+    ldx #$00
+    :
+    sta object_x_page_subpixels, x
+    inx
+    cpx #16
+    bcc :-
+    lda #$00
+    ldx #$00
+    :
+    sta object_x_positions, x
+    clc
+    adc #$20
+    cmp #$80
+    bcc :+
+    lda #$00
+    :
+    inx
+    cpx #16
+    bcc :--
+    lda #$08
+    ldx #$00
+    :
+    sta object_y_positions, x
+    inx
+    sta object_y_positions, x
+    inx
+    sta object_y_positions, x
+    inx
+    sta object_y_positions, x
+    clc
+    adc #$40
+    inx
+    cpx #16
+    bcc :-
+    lda #$01
+    ldx #$01
+    :
+    sta object_animations_ids, x
+    inx
+    inx
+    cpx #16
+    bcc :-
+    lda #OBJECT_FLIPPED_H
+    sta object_flags + 4
+    sta object_flags + 5
+    sta object_flags + 6
+    sta object_flags + 7
+    lda #OBJECT_FLIPPED_V
+    sta object_flags + 8
+    sta object_flags + 9
+    sta object_flags + 10
+    sta object_flags + 11
+    lda #OBJECT_FLIPPED_H + OBJECT_FLIPPED_V
+    sta object_flags + 12
+    sta object_flags + 13
+    sta object_flags + 14
+    sta object_flags + 15
 
 forever:
     jmp forever
@@ -1211,6 +1274,8 @@ TestSpriteLayout0:
 
 TestSpriteLayout1:
     .byte $04 ; Num sprites
+    .byte $10 ; Width
+    .byte $20 ; Height
 
     .byte $09       ; Index
     .byte $00       ; X offset
