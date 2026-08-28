@@ -431,14 +431,14 @@ game_logic:
     jmp @end_build_sprite_loop ; Skip if it's hidden
     :
     lda object_animations_ids, x
-    cmp NumSpriteLayouts ; Check if the index is out of bounds
+    cmp NumMetaSprites ; Check if the index is out of bounds
     bcc :+
     jmp @end_build_sprite_loop
     :
     tay
-    lda SpriteLayoutPointersLow, y
+    lda MetaSpritePointersLow, y
     sta scratch
-    lda SpriteLayoutPointersHigh, y
+    lda MetaSpritePointersHigh, y
     sta scratch + 1
     ldy #$00
     lda (scratch), y
@@ -1238,17 +1238,17 @@ ObjectStepPointersHigh:
 ; Sprite layout structure:
 ; 1 byte for the number of sprites, 1 byte for width in pixels, 1 byte for height in pixels
 ; For each sprite, 1 byte for index, 1 byte for x offset, 1 byte for y offset, and 1 byte for attributes
-NumSpriteLayouts:
+NumMetaSprites:
     .byte $02
-.define SpriteLayoutPointers \
-    TestSpriteLayout0, \
-    TestSpriteLayout1
-SpriteLayoutPointersLow:
-    .lobytes SpriteLayoutPointers
-SpriteLayoutPointersHigh:
-    .hibytes SpriteLayoutPointers
+.define MetaSpritePointers \
+    TestMetaSprite0, \
+    TestMetaSprite1
+MetaSpritePointersLow:
+    .lobytes MetaSpritePointers
+MetaSpritePointersHigh:
+    .hibytes MetaSpritePointers
 
-TestSpriteLayout0:
+TestMetaSprite0:
     .byte $04 ; Num sprites
     .byte $10 ; Width
     .byte $20 ; Height
@@ -1273,7 +1273,7 @@ TestSpriteLayout0:
     .byte $10       ; Y offset
     .byte %00000011 ; Attributes
 
-TestSpriteLayout1:
+TestMetaSprite1:
     .byte $04 ; Num sprites
     .byte $10 ; Width
     .byte $20 ; Height
