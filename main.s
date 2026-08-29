@@ -30,6 +30,10 @@ OBJECT_FLIPPED_V =      %10000000
 OBJECT_FLIPPED_H =      %01000000
 OBJECT_IS_PRIORITY =    %00100000
 OBJECT_IS_HIDDEN =      %00010000
+ANIM_PLAYER_IDLE_FRAME = $02
+ANIM_PLAYER_IDLE_LENGTH = $FF
+SUBPIXEL_MASK = %00000111
+PAGE_MASK = %11111000
 
 .zeropage
     scratch: .res $10
@@ -228,71 +232,75 @@ main:
     sta current_ppu_ctrl
     sta PPUCTRL
 
-    lda #$01
+    ; lda #$01
+    ; ldx #$00
+    ; :
+    ; sta object_ids, x
+    ; inx
+    ; cpx #16
+    ; bcc :-
+    ; lda #$08
+    ; ldx #$00
+    ; :
+    ; sta object_x_page_subpixels, x
+    ; inx
+    ; cpx #16
+    ; bcc :-
+    ; lda #$00
+    ; ldx #$00
+    ; :
+    ; sta object_x_positions, x
+    ; clc
+    ; adc #$20
+    ; cmp #$80
+    ; bcc :+
+    ; lda #$00
+    ; :
+    ; inx
+    ; cpx #16
+    ; bcc :--
+    ; lda #$08
+    ; ldx #$00
+    ; :
+    ; sta object_y_positions, x
+    ; inx
+    ; sta object_y_positions, x
+    ; inx
+    ; sta object_y_positions, x
+    ; inx
+    ; sta object_y_positions, x
+    ; clc
+    ; adc #$40
+    ; inx
+    ; cpx #16
+    ; bcc :-
+    ; lda #$01
+    ; ldx #$01
+    ; :
+    ; sta object_current_metasprites, x
+    ; inx
+    ; inx
+    ; cpx #16
+    ; bcc :-
+    ; lda #OBJECT_FLIPPED_H
+    ; sta object_flags + 4
+    ; sta object_flags + 5
+    ; sta object_flags + 6
+    ; sta object_flags + 7
+    ; lda #OBJECT_FLIPPED_V
+    ; sta object_flags + 8
+    ; sta object_flags + 9
+    ; sta object_flags + 10
+    ; sta object_flags + 11
+    ; lda #OBJECT_FLIPPED_H + OBJECT_FLIPPED_V
+    ; sta object_flags + 12
+    ; sta object_flags + 13
+    ; sta object_flags + 14
+    ; sta object_flags + 15
+
+    lda #$02
     ldx #$00
-    :
-    sta object_ids, x
-    inx
-    cpx #16
-    bcc :-
-    lda #$08
-    ldx #$00
-    :
-    sta object_x_page_subpixels, x
-    inx
-    cpx #16
-    bcc :-
-    lda #$00
-    ldx #$00
-    :
-    sta object_x_positions, x
-    clc
-    adc #$20
-    cmp #$80
-    bcc :+
-    lda #$00
-    :
-    inx
-    cpx #16
-    bcc :--
-    lda #$08
-    ldx #$00
-    :
-    sta object_y_positions, x
-    inx
-    sta object_y_positions, x
-    inx
-    sta object_y_positions, x
-    inx
-    sta object_y_positions, x
-    clc
-    adc #$40
-    inx
-    cpx #16
-    bcc :-
-    lda #$01
-    ldx #$01
-    :
-    sta object_current_metasprites, x
-    inx
-    inx
-    cpx #16
-    bcc :-
-    lda #OBJECT_FLIPPED_H
-    sta object_flags + 4
-    sta object_flags + 5
-    sta object_flags + 6
-    sta object_flags + 7
-    lda #OBJECT_FLIPPED_V
-    sta object_flags + 8
-    sta object_flags + 9
-    sta object_flags + 10
-    sta object_flags + 11
-    lda #OBJECT_FLIPPED_H + OBJECT_FLIPPED_V
-    sta object_flags + 12
-    sta object_flags + 13
-    sta object_flags + 14
-    sta object_flags + 15
+    jsr spawn_object
 
 forever:
     jmp forever
@@ -1230,29 +1238,70 @@ play_animation:
     :
     lda object_animation_timers, x ; Check timer for current frame
     bne @same_animation_frame ; If not 0, just decrease the timer
-    ldy object_animations_frames, x
+    ldy object_animations_ids, x
     inc object_animations_frames, x ; Else go to the next frame
     lda AnimationLengths, y
+    sta scratch + 2 ; Store animation length
     and #%01111111 ; Remove loop bit
     cmp object_animations_frames, x
     bne @did_not_reach_animation_end
-    lda #$00
-    sta
+    lda scratch + 2 ; Check if animation loops
+    cmp #%10000000
+    bcc @no_loop
+    lda #$01
+    sta object_animations_frames, x
+    @no_loop:
+    dec object_animations_frames, x
     @did_not_reach_animation_end:
-    ldy object_animations_frames, y ; Set animation timer for new frame
-    lda AnimationFrameLengthPointersLow 
+    ldy object_animations_ids, x
+    lda AnimationFrameLengthPointersLow, y ; Set animation timer for new frame
     sta scratch
-    lda AnimationFrameLengthPointersHigh
+    lda AnimationFrameLengthPointersHigh, y
     sta scratch + 1
+    lda AnimationFramePointersLow, y ; Set metasprite for new frame
+    sta scratch + 2
+    lda AnimationFramePointersHigh, y
+    sta scratch + 3
+    ldy object_animations_frames, x
     lda (scratch), y
-    sta animationFrame
-    lda object_animations_frames
-
+    sta object_animation_timers, x
+    lda (scratch + 2), y
+    sta object_current_metasprites, x
+    rts
     @same_animation_frame:
     sec
     sbc #$01
     sta object_animation_timers, x
     rts
+
+; Object index in X, animation ID in y
+init_animation:
+    lda AnimationFrameLengthPointersLow, y ; Set animation timer for new frame
+    sta scratch
+    lda AnimationFrameLengthPointersHigh, y
+    sta scratch + 1
+    lda AnimationFramePointersLow, y ; Set metasprite for new frame
+    sta scratch + 2
+    lda AnimationFramePointersHigh, y
+    sta scratch + 3
+    lda #$00
+    tay
+    sta object_animations_frames, x
+    lda (scratch), y
+    sta object_animation_timers, x
+    lda (scratch + 2), y
+    sta object_current_metasprites, x
+    rts
+
+; Object index in X, object ID in A
+spawn_object:
+    sta object_ids, x
+    tay
+    lda ObjectInitPointersLow, y
+    sta scratch
+    lda ObjectInitPointersHigh, y
+    sta scratch + 1
+    jmp (scratch)
 
 ; Object index in X
 test_object_init:
@@ -1262,41 +1311,14 @@ test_object_init:
 test_object_step:
     rts
 
-; Object index in X
-player_init:
-    lda #$10
-    sta object_x_positions, x
-    lda #176
-    sta object_y_positions, x
-    lda #$00
-    sta object_x_page_subpixels, x
-    sta object_y_page_subpixels, x
-    sta object_flags, x
-    sta object_animation_timers, x
-    sta object_animations_ids, x
-    sta object_variables_0, x
-    sta object_variables_1, x
-    sta object_variables_2, x
-    sta object_variables_3, x
-    sta object_variables_4, x
-    sta object_variables_5, x
-    lda #$FF
-    sta object_animations_frames, x
-    jsr play_animation
-    rts
-
-; Object index in X
-; Variables:
-; 0 - X Velocity
-; 1 - Y Velocity
-player_step:
-    rts
+.include "player.s"
 
 NumObjects:
-    .byte $02
+    .byte $03
 .define ObjectStepPointers \
     $0000, \
-    test_object_step
+    test_object_step, \
+    player_step
 ObjectStepPointersLow:
     .lobytes ObjectStepPointers
 ObjectStepPointersHigh:
@@ -1304,7 +1326,8 @@ ObjectStepPointersHigh:
 
 .define ObjectInitPointers \
     $0000, \
-    test_object_init
+    test_object_init, \
+    player_init
 ObjectInitPointersLow:
     .lobytes ObjectInitPointers
 ObjectInitPointersHigh:
@@ -1314,10 +1337,14 @@ ObjectInitPointersHigh:
 ; 1 byte for the number of sprites, 1 byte for width in pixels, 1 byte for height in pixels
 ; For each sprite, 1 byte for index, 1 byte for x offset, 1 byte for y offset, and 1 byte for attributes
 NumMetaSprites:
-    .byte $02
+    .byte $06
 .define MetaSpritePointers \
     TestMetaSprite0, \
-    TestMetaSprite1
+    TestMetaSprite1, \
+    PlayerIdleSprite, \
+    PlayerWalkSprite0, \
+    PlayerWalkSprite1, \
+    PlayerJumpSprite
 MetaSpritePointersLow:
     .lobytes MetaSpritePointers
 MetaSpritePointersHigh:
@@ -1373,6 +1400,70 @@ TestMetaSprite1:
     .byte $10       ; Y offset
     .byte %00000011 ; Attributes
 
+PlayerIdleSprite:
+    .byte $02 ; Num sprites
+    .byte $10 ; Width
+    .byte $10 ; Height
+
+    .byte $11       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $13       ; Index
+    .byte $08       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+
+PlayerWalkSprite0:
+    .byte $02 ; Num sprites
+    .byte $10 ; Width
+    .byte $10 ; Height
+
+    .byte $15       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $17       ; Index
+    .byte $08       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+
+PlayerWalkSprite1:
+    .byte $02 ; Num sprites
+    .byte $10 ; Width
+    .byte $10 ; Height
+
+    .byte $19       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1B       ; Index
+    .byte $08       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+
+PlayerJumpSprite:
+    .byte $02 ; Num sprites
+    .byte $10 ; Width
+    .byte $10 ; Height
+
+    .byte $1D       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $08       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+
+ANIM_PLAYER_IDLE = 0
+ANIM_PLAYER_WALK = 1
+ANIM_PLAYER_JUMP = 2
+
 NumAnimations:
     .byte $03
 .define AnimationFramePointers \
@@ -1398,16 +1489,16 @@ AnimationLengths:
     .byte 1, 128 + 4, 1
 
 AnimPlayerIdleFrames:
-    .byte $02
+    .byte ANIM_PLAYER_IDLE_FRAME
 
 AnimPlayerIdleLengths:
-    .byte $00
+    .byte ANIM_PLAYER_IDLE_LENGTH
 
 AnimPlayerWalkFrames:
     .byte $02, $03, $02, $04
 
 AnimPlayerWalkLengths:
-    .byte $02, $02, $02, $02
+    .byte $08, $08, $08, $08
 
 AnimPlayerJumpFrames:
     .byte $05
