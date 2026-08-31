@@ -25,7 +25,7 @@ BUTTON_RIGHT =  %00000001
 WILL_LOAD_LEVEL = 0
 LEVEL_READY = 1
 LEVEL_LOADED = 2
-SCROLL_SPEED = 2
+SCROLL_SPEED = 8
 OBJECT_FLIPPED_V =      %10000000
 OBJECT_FLIPPED_H =      %01000000
 OBJECT_IS_PRIORITY =    %00100000
@@ -316,6 +316,7 @@ nmi:
 @vblank_routine:
     lda game_state ; Check if we load level
     bne :+
+    lda #$00
     jmp load_level
     :
     inc frame_done ; Set back to 0
@@ -626,8 +627,13 @@ game_logic:
 dynamic_jump:
     jmp (scratch)
 
-; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07
+; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11
 handle_scroll:
+    lda object_ids ; Check if slot 0 is the player
+    cmp #$02
+    beq :+
+    rts ; Return if it's not the player
+    :
     ldx current_level ; Store this for later
     lda LevelLengths, x
     sta scratch + 2
@@ -636,9 +642,53 @@ handle_scroll:
     lsr
     lsr
     sta scratch ; Store scroll before
-    lda controller_input
-    and #BUTTON_RIGHT
-    beq @not_pressing_right
+    lda object_x_page_subpixels ; Calculate center of player
+    lsr
+    lsr
+    lsr
+    sta scratch + 9
+    lda object_x_positions 
+    sec
+    sbc #128 - 8
+    sta scratch + 8
+    lda scratch + 9
+    sbc #$00
+    bcs :+
+    lda #$00
+    sta current_page
+    sta x_scroll
+    rts ; Return early if goes off the left side of the screen
+    :
+    sta scratch + 9
+    lda current_page
+    cmp scratch + 9
+    bcc @scroll_right
+    bne @scroll_left
+    lda x_scroll
+    cmp scratch + 8
+    bcc @scroll_right
+    bne @scroll_left
+    rts ; No scroll
+    @scroll_left:
+    lda #$00
+    sta scratch + 4 ; Store that we're scrolling left
+    lda scratch + 8
+    sec
+    sbc x_scroll
+    cmp #(256 - SCROLL_SPEED)
+    bcs :+
+    lda #(256 - SCROLL_SPEED)
+    :
+    clc
+    adc x_scroll
+    sta x_scroll
+    bcs @not_pressing_left
+    dec current_page
+    lda current_ppu_ctrl ; Switch to the other nametable
+    eor #$00000001
+    sta current_ppu_ctrl
+    jmp @not_pressing_left
+    @scroll_right:
     lda #$01
     sta scratch + 4 ; Store that we're scrolling right
     lda current_page ; Check if we're already at the end
@@ -648,11 +698,17 @@ handle_scroll:
     rts ; Return early if we're already at the right edge
     :
     inc scratch + 2
-    lda x_scroll
+    lda scratch + 8
+    sec
+    sbc x_scroll
+    cmp #SCROLL_SPEED
+    bcc :+
+    lda #SCROLL_SPEED
+    :
     clc
-    adc #SCROLL_SPEED
+    adc x_scroll
     sta x_scroll
-    bcc @no_overflow
+    bcc @not_pressing_left
     lda current_ppu_ctrl ; Switch to the other nametable
     eor #$00000001
     sta current_ppu_ctrl
@@ -667,29 +723,6 @@ handle_scroll:
     rts ; I think it should be okay to return since we don't need to load anything
     @not_at_edge:
     dec current_page
-    @no_overflow:
-    jmp @not_pressing_left
-    @not_pressing_right:
-    lda controller_input
-    and #BUTTON_LEFT
-    beq @not_pressing_left
-    lda #$00
-    sta scratch + 4 ; Store that we're scrolling left
-    lda x_scroll
-    sec
-    sbc #SCROLL_SPEED
-    sta x_scroll
-    bcs @not_pressing_left
-    lda current_page
-    bne @decrement_page ; Check if we reached left edge of screen
-    lda #$00
-    sta x_scroll
-    rts ; Early return because nothing needs to be loaded
-    @decrement_page:
-    dec current_page
-    lda current_ppu_ctrl ; Switch to the other nametable
-    eor #$00000001
-    sta current_ppu_ctrl
     @not_pressing_left:
     ldx current_page
     lda x_scroll ; Check if our scroll crossed an 8-pixel boundary

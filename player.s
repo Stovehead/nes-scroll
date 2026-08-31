@@ -31,7 +31,7 @@ player_init:
 player_x_velocity = object_variables_0
 player_y_velocity = object_variables_1
 PLAYER_ACCELERATION = 2 ; subpixels per frame
-PLAYER_MAX_SPEED = 12 ; subpixels per frame
+PLAYER_MAX_SPEED = 24 ; subpixels per frame
 PLAYER_WIDTH = 16
 player_step:
     lda object_animations_ids, x
