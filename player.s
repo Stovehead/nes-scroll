@@ -49,6 +49,8 @@ player_step:
     lda player_x_velocity, x
     clc
     adc #PLAYER_ACCELERATION
+    cmp #128
+    bcs :+
     cmp #PLAYER_MAX_SPEED
     bcc :+
     lda #PLAYER_MAX_SPEED
@@ -60,6 +62,8 @@ player_step:
     lda player_x_velocity, x
     sec
     sbc #PLAYER_ACCELERATION
+    cmp #128
+    bcc :+
     cmp #256 - PLAYER_MAX_SPEED
     bcs :+
     lda #256 - PLAYER_MAX_SPEED
@@ -128,6 +132,7 @@ player_step:
     lda #$00
     sta object_x_positions, x
     sta object_x_page_subpixels, x
+    sta player_x_velocity, x
     jmp @after_add_x_velocity
     :
     sec

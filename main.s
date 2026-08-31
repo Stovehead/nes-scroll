@@ -655,9 +655,13 @@ handle_scroll:
     sbc #$00
     bcs :+
     lda #$00
-    sta current_page
-    sta x_scroll
-    rts ; Return early if goes off the left side of the screen
+    sta scratch + 8
+    sta scratch + 9
+    lda current_page
+    bne @scroll_left
+    lda x_scroll
+    bne @scroll_left
+    rts 
     :
     sta scratch + 9
     lda current_page
