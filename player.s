@@ -134,6 +134,12 @@ player_step:
     :
     @after_add_y_velocity:
     ldy #$08
+    lda player_y_velocity, x
+    bne :+
+    jmp @after_vertical_collision
+    :
+    bpl @test_floor_collision_left
+    jmp @test_ceiling_collision_left
     @test_floor_collision_left:
     get_collision_at_point 5, 15
     ldx scratch + 3
@@ -180,10 +186,11 @@ player_step:
     bne @test_floor_collision_right
     jmp @after_vertical_collision
     @after_test_floor_collision_right:
+    jmp @after_vertical_collision
     @test_ceiling_collision_left:
     get_collision_at_point 5, 0
     ldx scratch + 3
-    and #COLLISION_TOP
+    and #COLLISION_BOTTOM
     beq @after_test_ceiling_collision_left
     lda object_y_page_subpixels, x
     and #PAGE_MASK
@@ -203,7 +210,7 @@ player_step:
     @test_ceiling_collision_right:
     get_collision_at_point 10, 0
     ldx scratch + 3
-    and #COLLISION_TOP
+    and #COLLISION_BOTTOM
     beq @after_test_ceiling_collision_right
     lda object_y_page_subpixels, x
     and #PAGE_MASK
