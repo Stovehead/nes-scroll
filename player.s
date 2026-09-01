@@ -4,6 +4,8 @@ player_init:
     sta object_x_positions, x
     lda #176
     sta object_y_positions, x
+    lda #PLAYER_IS_GROUNDED
+    sta player_flags, x
     lda #$00
     sta object_x_page_subpixels, x
     sta object_y_page_subpixels, x
@@ -13,7 +15,6 @@ player_init:
     sta object_animations_ids, x
     sta object_variables_0, x
     sta object_variables_1, x
-    sta object_variables_2, x
     sta object_variables_3, x
     sta object_variables_4, x
     sta object_variables_5, x
@@ -40,15 +41,19 @@ player_init:
     lsr
     sta scratch + 10
     lda object_x_positions, x
+    .if XOffset <> 0
     clc
     adc #XOffset
+    .endif
     sta scratch + 11
     lda scratch + 10
     adc #$00
     sta scratch + 10
     lda object_y_positions, x
+    .if YOffset <> 0
     clc
     adc #YOffset
+    .endif
     sta scratch + 12
     jsr test_collision
 .endmacro
@@ -58,16 +63,22 @@ player_x_velocity = object_variables_0
 player_y_velocity = object_variables_1
 player_flags = object_variables_2
 PLAYER_IS_GROUNDED = %00000001
-PLAYER_ACCELERATION = 2 ; subpixels per frame
+PLAYER_ACCELERATION = 4 ; subpixels per frame
 PLAYER_MAX_SPEED = 24 ; subpixels per frame
-PLAYER_JUMP_VELOCITY = 256 - 40 ; subpixels per frame
+PLAYER_JUMP_VELOCITY = 256 - 44 ; subpixels per frame
 PLAYER_WIDTH = 16
 player_step:
     lda object_animations_ids, x
     sta scratch + 2 ; Flag for new animation playing
     lda player_y_velocity, x ; Apply gravity
+    cmp #128
+    bcc :+
+    adc #LIGHT_GRAVITY
+    jmp :++
+    :
     clc
     adc #GRAVITY
+    :
     cmp #128
     bcs :+
     cmp #TERMINAL_VELOCITY 
@@ -143,8 +154,8 @@ player_step:
     sta player_flags, x ; Store that we're on the ground
     ldy scratch + 4
     dey
-    beq @after_test_floor_collision_right
-    jmp @test_floor_collision_left
+    bne @test_floor_collision_left
+    jmp @after_vertical_collision
     @after_test_floor_collision_left:
     @test_floor_collision_right:
     get_collision_at_point 10, 15
@@ -166,9 +177,49 @@ player_step:
     sta player_flags, x ; Store that we're on the ground
     ldy scratch + 4
     dey
-    beq @after_test_floor_collision_right
-    jmp @test_floor_collision_right
+    bne @test_floor_collision_right
+    jmp @after_vertical_collision
     @after_test_floor_collision_right:
+    @test_ceiling_collision_left:
+    get_collision_at_point 5, 0
+    ldx scratch + 3
+    and #COLLISION_TOP
+    beq @after_test_ceiling_collision_left
+    lda object_y_page_subpixels, x
+    and #PAGE_MASK
+    sta object_y_page_subpixels, x
+    lda object_y_positions, x
+    clc
+    adc #16
+    and #$F0
+    sta object_y_positions, x
+    lda #$00
+    sta player_y_velocity, x
+    ldy scratch + 4
+    dey
+    bne @test_ceiling_collision_left
+    jmp @after_vertical_collision
+    @after_test_ceiling_collision_left:
+    @test_ceiling_collision_right:
+    get_collision_at_point 10, 0
+    ldx scratch + 3
+    and #COLLISION_TOP
+    beq @after_test_ceiling_collision_right
+    lda object_y_page_subpixels, x
+    and #PAGE_MASK
+    sta object_y_page_subpixels, x
+    lda object_y_positions, x
+    clc
+    adc #16
+    and #$F0
+    sta object_y_positions, x
+    lda #$00
+    sta player_y_velocity, x
+    ldy scratch + 4
+    dey
+    bne @test_ceiling_collision_right
+    @after_test_ceiling_collision_right:
+    @after_vertical_collision:
     lda controller_input
     and #BUTTON_RIGHT + BUTTON_LEFT
     beq @not_pressing_anything
@@ -294,7 +345,95 @@ player_step:
     sta object_x_page_subpixels, x
     :
     @after_add_x_velocity:
-
+    ldy #$08
+    @test_wall_collision_top_right:
+    get_collision_at_point 13, 2
+    ldx scratch + 3
+    and #COLLISION_RIGHT
+    beq @after_test_wall_collision_top_right
+    lda object_x_page_subpixels, x
+    and #PAGE_MASK
+    sta object_x_page_subpixels, x
+    lda object_x_positions, x
+    clc
+    adc #13
+    and #$F0
+    sec
+    sbc #14
+    sta object_x_positions, x
+    lda #$00
+    sta player_x_velocity, x
+    ldy scratch + 4
+    dey
+    bne @test_wall_collision_top_right
+    jmp @after_test_wall_collision
+    @after_test_wall_collision_top_right:
+    @test_wall_collision_bottom_right:
+    get_collision_at_point 13, 12
+    ldx scratch + 3
+    and #COLLISION_RIGHT
+    beq @after_test_wall_collision_bottom_right
+    lda object_x_page_subpixels, x
+    and #PAGE_MASK
+    sta object_x_page_subpixels, x
+    lda object_x_positions, x
+    clc
+    adc #13
+    and #$F0
+    sec
+    sbc #14
+    sta object_x_positions, x
+    lda #$00
+    sta player_x_velocity, x
+    ldy scratch + 4
+    dey
+    bne @test_wall_collision_bottom_right
+    jmp @after_test_wall_collision
+    @after_test_wall_collision_bottom_right:
+    @test_wall_collision_top_left:
+    get_collision_at_point 2, 2
+    ldx scratch + 3
+    and #COLLISION_LEFT
+    beq @after_test_wall_collision_top_left
+    lda object_x_page_subpixels, x
+    and #PAGE_MASK
+    sta object_x_page_subpixels, x
+    lda object_x_positions, x
+    sec
+    sbc #3
+    and #$F0
+    clc
+    adc #14
+    sta object_x_positions, x
+    lda #$00
+    sta player_x_velocity, x
+    ldy scratch + 4
+    dey
+    bne @test_wall_collision_top_left
+    jmp @after_test_wall_collision
+    @after_test_wall_collision_top_left:
+    @test_wall_collision_bottom_left:
+    get_collision_at_point 2, 12
+    ldx scratch + 3
+    and #COLLISION_LEFT
+    beq @after_test_wall_collision_bottom_left
+    lda object_x_page_subpixels, x
+    and #PAGE_MASK
+    sta object_x_page_subpixels, x
+    lda object_x_positions, x
+    sec
+    sbc #3
+    and #$F0
+    clc
+    adc #14
+    sta object_x_positions, x
+    lda #$00
+    sta player_x_velocity, x
+    ldy scratch + 4
+    dey
+    bne @test_wall_collision_bottom_left
+    @after_test_wall_collision_bottom_left:
+    @after_test_wall_collision:
     lda player_flags, x ; Check if we're on the ground
     and #PLAYER_IS_GROUNDED
     beq @not_on_ground
@@ -306,6 +445,15 @@ player_step:
     @not_on_ground:
     lda #ANIM_PLAYER_JUMP
     sta scratch + 2
+    lda player_y_velocity, x
+    cmp #128
+    bcc @after_release_jump
+    lda buttons_released
+    and #BUTTON_A
+    beq @after_release_jump
+    lda #$00
+    sta player_y_velocity, x
+    @after_release_jump:
     @after_air_code:
     lda scratch + 2
     cmp object_animations_ids, x
