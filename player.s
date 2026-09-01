@@ -27,6 +27,32 @@ player_init:
     sta object_animation_timers, x
     rts
 
+.macro get_collision_at_point XOffset, YOffset
+    stx scratch + 3
+    sty scratch + 4
+    lda object_y_page_subpixels, x
+    and #PAGE_MASK
+    ora scratch + 5
+    sta object_y_page_subpixels, x
+    lda object_x_page_subpixels, x
+    lsr
+    lsr
+    lsr
+    sta scratch + 10
+    lda object_x_positions, x
+    clc
+    adc #XOffset
+    sta scratch + 11
+    lda scratch + 10
+    adc #$00
+    sta scratch + 10
+    lda object_y_positions, x
+    clc
+    adc #YOffset
+    sta scratch + 12
+    jsr test_collision
+.endmacro
+
 ; Object index in X
 player_x_velocity = object_variables_0
 player_y_velocity = object_variables_1
@@ -149,9 +175,74 @@ player_step:
     sta object_x_page_subpixels, x
     :
     @after_add_x_velocity:
+    lda player_y_velocity, x ; Apply gravity
+    clc
+    adc #GRAVITY
+    cmp #TERMINAL_VELOCITY 
+    bcc :+
+    lda #TERMINAL_VELOCITY
+    :
+    sta player_y_velocity, x
+    lda object_y_page_subpixels, x
+    and #SUBPIXEL_MASK
+    clc
+    adc player_y_velocity, x
+    sta scratch + 5
+    cmp #SUBPIXEL_MASK
+    bcc :+
+    and #PAGE_MASK
+    lsr
+    lsr
+    lsr
+    clc
+    adc object_y_positions, x
+    sta object_y_positions, x
+    :
+    ldy #$08
+    @test_floor_collision_left:
+    get_collision_at_point 5, 15
+    ldx scratch + 3
+    and #COLLISION_TOP
+    beq @after_test_floor_collision_left
+    lda object_y_page_subpixels, x
+    and #PAGE_MASK
+    sta object_y_page_subpixels, x
+    lda object_y_positions, x
+    sec
+    sbc #$01
+    and #$F0
+    sta object_y_positions, x
+    lda #$00
+    sta player_y_velocity, x
+    ldy scratch + 4
+    dey
+    beq @after_test_floor_collision_right
+    jmp @test_floor_collision_left
+    @after_test_floor_collision_left:
+    @test_floor_collision_right:
+    get_collision_at_point 10, 15
+    ldx scratch + 3
+    and #COLLISION_TOP
+    beq @after_test_floor_collision_right
+    lda object_y_page_subpixels, x
+    and #PAGE_MASK
+    sta object_y_page_subpixels, x
+    lda object_y_positions, x
+    sec
+    sbc #$01
+    and #$F0
+    sta object_y_positions, x
+    lda #$00
+    sta player_y_velocity, x
+    ldy scratch + 4
+    dey
+    beq @after_test_floor_collision_right
+    jmp @test_floor_collision_right
+    @after_test_floor_collision_right:
     lda scratch + 2
     cmp object_animations_ids, x
     beq :+
+    tay
     sta object_animations_ids, x
     jsr init_animation
     jmp :++

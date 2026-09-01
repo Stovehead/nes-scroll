@@ -34,6 +34,12 @@ ANIM_PLAYER_IDLE_FRAME = $02
 ANIM_PLAYER_IDLE_LENGTH = $FF
 SUBPIXEL_MASK = %00000111
 PAGE_MASK = %11111000
+COLLISION_TOP =     %00000001
+COLLISION_RIGHT =   %00000010
+COLLISION_BOTTOM =  %00000100
+COLLISION_LEFT =    %00001000
+GRAVITY = 2 ; Subpixels per frame
+TERMINAL_VELOCITY = 64 ; Subpixels per frame
 
 .zeropage
     scratch: .res $10
@@ -1266,6 +1272,80 @@ load_level:
     pla
     rti
 
+; Page in 10, X position in 11, Y position in 12
+; Clobbers A, X, Y, 9, 13, 14, 15
+; Returns collision of tile in A
+test_collision:
+    ldx current_level
+    lda LevelTilePointersLow, x
+    sta scratch + 14
+    lda LevelTilePointersHigh, x
+    sta scratch + 15
+    lda #$00
+    sta scratch + 9
+    lda scratch + 10
+    clc
+    asl ; Each page has 64 meta meta tiles
+    rol scratch + 9
+    asl
+    rol scratch + 9
+    asl
+    rol scratch + 9
+    asl
+    rol scratch + 9
+    asl
+    rol scratch + 9
+    asl
+    rol scratch + 9
+    clc
+    adc scratch + 14
+    sta scratch + 14
+    lda scratch + 15
+    adc scratch + 9
+    sta scratch + 15
+    lda scratch + 12
+    lsr
+    lsr
+    lsr
+    lsr
+    lsr
+    sta scratch + 9
+    lda scratch + 11
+    lsr
+    lsr
+    and #%11111000
+    clc
+    adc scratch + 9
+    tay
+    lda (scratch + 14), y
+    tax
+    lda scratch + 11
+    and #$1F
+    cmp #$0F
+    bcs @right_of_meta_meta_tile
+    lda scratch + 12
+    and #$1F
+    cmp #$0F
+    bcs @bottom_left_of_meta_meta_tile
+    lda MetaMetaTilesTopLeft, x
+    jmp @after_get_meta_tile
+    @bottom_left_of_meta_meta_tile:
+    lda MetaMetaTilesBottomLeft, x
+    jmp @after_get_meta_tile
+    @right_of_meta_meta_tile:
+    lda scratch + 12
+    and #$1F
+    cmp #$0F
+    bcs @bottom_right_of_meta_meta_tile
+    lda MetaMetaTilesTopRight, x
+    jmp @after_get_meta_tile
+    @bottom_right_of_meta_meta_tile:
+    lda MetaMetaTilesBottomRight, x
+    @after_get_meta_tile:
+    tax
+    lda MetaTileCollision, x
+    rts
+
 ; Object index in X
 play_animation:
     lda object_animations_ids, x
@@ -1552,6 +1632,9 @@ MetaTilesBottomLeft:
 MetaTilesBottomRight:
     .byte $00, $11, $13, $00, $19, $04, $06, $00, $0C, $43, $43, $23, $00, $2B, $2D, $37, $00, $40, $00, $20, $21, $00, $20, $1B, $35, $31, $35, $32, $31, $3B, $31, $32
 
+MetaTileCollision:
+    .byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $0F, $0F, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+
 MetaMetaTilesTopLeft:
     .byte $00, $01, $05, $09, $0A, $0B, $0F, $00, $14, $18, $1A
 MetaMetaTilesTopRight:
@@ -1576,7 +1659,7 @@ LevelTilePointersHigh:
 Level0Tiles:
     .byte $00, $00, $00, $00, $00, $00, $03, $04
     .byte $00, $01, $00, $00, $05, $06, $03, $04
-    .byte $00, $00, $02, $00, $00, $00, $03, $04
+    .byte $00, $00, $02, $00, $00, $03, $03, $04
     .byte $02, $00, $00, $00, $07, $09, $03, $04
     .byte $00, $00, $01, $00, $08, $0A, $03, $04
     .byte $00, $00, $00, $00, $00, $00, $03, $04
