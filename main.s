@@ -39,6 +39,7 @@ COLLISION_RIGHT =   %00000010
 COLLISION_BOTTOM =  %00000100
 COLLISION_LEFT =    %00001000
 GRAVITY = 2 ; Subpixels per frame
+LIGHT_GRAVITY = 1 ; Subpixels per frame
 TERMINAL_VELOCITY = 64 ; Subpixels per frame
 
 .zeropage
