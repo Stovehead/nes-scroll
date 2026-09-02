@@ -509,15 +509,12 @@ game_logic:
     bcc :+
     jmp @end_single_sprite_loop ; Skip if this sprite ended up off screen
     :
-    sec
-    sbc #$01 ; Account for the 1 pixel vertical offset
-    ; cmp y_scroll
-    ; bcs :+
-    ; sec
-    ; sbc #16
-    ; :
-    ; sec
-    ; sbc y_scroll
+    cmp y_scroll
+    bcs :+
+    sbc #15
+    :
+    clc ; Account for one-pixel offset
+    sbc y_scroll
     ldy oam_offset
     sta OAMBUFFER, y ; Store y position in OAM
     iny
@@ -578,31 +575,31 @@ dynamic_jump:
 
 ; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11
 handle_scroll:
-    ; lda controller_input
-    ; and #BUTTON_UP
-    ; beq :++
-    ; lda y_scroll
-    ; sec
-    ; sbc #$01
-    ; cmp #240
-    ; bcc :+
-    ; sbc #16
-    ; :
-    ; sta y_scroll
-    ; jmp :+++
-    ; :
-    ; lda controller_input
-    ; and #BUTTON_DOWN
-    ; beq :++
-    ; lda y_scroll
-    ; clc
-    ; adc #$01
-    ; cmp #240
-    ; bcc :+
-    ; adc #16
-    ; :
-    ; sta y_scroll
-    ; :
+    lda controller_input
+    and #BUTTON_UP
+    beq :++
+    lda y_scroll
+    sec
+    sbc #$01
+    cmp #239
+    bcc :+
+    sbc #16
+    :
+    sta y_scroll
+    jmp :+++
+    :
+    lda controller_input
+    and #BUTTON_DOWN
+    beq :++
+    lda y_scroll
+    clc
+    adc #$01
+    cmp #240
+    bcc :+
+    adc #15
+    :
+    sta y_scroll
+    :
     lda object_ids ; Check if slot 0 is the player
     cmp #$02
     beq :+
