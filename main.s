@@ -233,81 +233,15 @@ main:
     lda #%00011110  ; Enable rendering
     sta current_ppu_mask
 
+    lda #$02
+    ldx #$00
+    jsr spawn_object
+
     dec frame_done
 
     lda #%10100000	; Enable NMI and set sprite size
     sta current_ppu_ctrl
     sta PPUCTRL
-
-    ; lda #$01
-    ; ldx #$00
-    ; :
-    ; sta object_ids, x
-    ; inx
-    ; cpx #16
-    ; bcc :-
-    ; lda #$08
-    ; ldx #$00
-    ; :
-    ; sta object_x_page_subpixels, x
-    ; inx
-    ; cpx #16
-    ; bcc :-
-    ; lda #$00
-    ; ldx #$00
-    ; :
-    ; sta object_x_positions, x
-    ; clc
-    ; adc #$20
-    ; cmp #$80
-    ; bcc :+
-    ; lda #$00
-    ; :
-    ; inx
-    ; cpx #16
-    ; bcc :--
-    ; lda #$08
-    ; ldx #$00
-    ; :
-    ; sta object_y_positions, x
-    ; inx
-    ; sta object_y_positions, x
-    ; inx
-    ; sta object_y_positions, x
-    ; inx
-    ; sta object_y_positions, x
-    ; clc
-    ; adc #$40
-    ; inx
-    ; cpx #16
-    ; bcc :-
-    ; lda #$01
-    ; ldx #$01
-    ; :
-    ; sta object_current_metasprites, x
-    ; inx
-    ; inx
-    ; cpx #16
-    ; bcc :-
-    ; lda #OBJECT_FLIPPED_H
-    ; sta object_flags + 4
-    ; sta object_flags + 5
-    ; sta object_flags + 6
-    ; sta object_flags + 7
-    ; lda #OBJECT_FLIPPED_V
-    ; sta object_flags + 8
-    ; sta object_flags + 9
-    ; sta object_flags + 10
-    ; sta object_flags + 11
-    ; lda #OBJECT_FLIPPED_H + OBJECT_FLIPPED_V
-    ; sta object_flags + 12
-    ; sta object_flags + 13
-    ; sta object_flags + 14
-    ; sta object_flags + 15
-
-    lda #$02
-    ldx #$00
-    jsr spawn_object
 
 forever:
     jmp forever
