@@ -62,6 +62,7 @@ TERMINAL_VELOCITY = 64 ; Subpixels per frame
     buttons_released: .res 1
     vram_buffer_index: .res 1
     oam_offset: .res 1
+    collision_buffer: .res 12
 
 .bss
     object_ids: .res $10
@@ -510,6 +511,13 @@ game_logic:
     :
     sec
     sbc #$01 ; Account for the 1 pixel vertical offset
+    ; cmp y_scroll
+    ; bcs :+
+    ; sec
+    ; sbc #16
+    ; :
+    ; sec
+    ; sbc y_scroll
     ldy oam_offset
     sta OAMBUFFER, y ; Store y position in OAM
     iny
@@ -570,6 +578,31 @@ dynamic_jump:
 
 ; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11
 handle_scroll:
+    ; lda controller_input
+    ; and #BUTTON_UP
+    ; beq :++
+    ; lda y_scroll
+    ; sec
+    ; sbc #$01
+    ; cmp #240
+    ; bcc :+
+    ; sbc #16
+    ; :
+    ; sta y_scroll
+    ; jmp :+++
+    ; :
+    ; lda controller_input
+    ; and #BUTTON_DOWN
+    ; beq :++
+    ; lda y_scroll
+    ; clc
+    ; adc #$01
+    ; cmp #240
+    ; bcc :+
+    ; adc #16
+    ; :
+    ; sta y_scroll
+    ; :
     lda object_ids ; Check if slot 0 is the player
     cmp #$02
     beq :+
@@ -1355,6 +1388,126 @@ spawn_object:
     sta scratch + 1
     jmp (scratch)
 
+; Object 1 in X
+load_object_collision:
+    lda object_x_positions, x
+    sta collision_buffer
+    lda object_x_page_subpixels, x
+    lsr
+    lsr
+    lsr
+    sta collision_buffer + 1
+    lda object_y_positions, x
+    sta collision_buffer + 4
+    
+    lda object_ids, x
+    tax
+    
+    lda ObjectHitboxXOffsets, x
+    clc
+    adc collision_buffer
+    sta collision_buffer
+    lda #$00
+    adc collision_buffer + 1
+    sta collision_buffer + 1
+    lda ObjectHitboxWidths, x
+    clc
+    adc collision_buffer
+    sta collision_buffer + 2
+    lda #$00
+    adc collision_buffer + 1
+    sta collision_buffer + 3
+    lda ObjectHitboxYOffsets, x
+    clc
+    adc collision_buffer + 4
+    sta collision_buffer + 4
+    clc
+    adc ObjectHitboxHeights, x
+    sta collision_buffer + 5
+    rts
+
+; Object 2 in Y
+test_object_collision:
+    lda object_x_positions, y
+    sta collision_buffer + 6
+    lda object_x_page_subpixels, y
+    lsr
+    lsr
+    lsr
+    sta collision_buffer + 7
+    lda object_y_positions, y
+    sta collision_buffer + 10
+    lda object_ids, y
+    tay
+    lda ObjectHitboxXOffsets, y
+    clc
+    adc collision_buffer + 6
+    sta collision_buffer + 6
+    lda #$00
+    adc collision_buffer + 7
+    sta collision_buffer + 7
+
+    lda collision_buffer + 3
+    cmp collision_buffer + 7
+    beq :+
+    bcs :++
+    lda #$00
+    rts
+    :
+    lda collision_buffer + 2
+    cmp collision_buffer + 6
+    bcs :+
+    lda #$00
+    rts
+    :
+
+    lda ObjectHitboxWidths, y
+    clc
+    adc collision_buffer + 6
+    sta collision_buffer + 8
+    lda #$00
+    adc collision_buffer + 7
+    sta collision_buffer + 9
+
+    lda collision_buffer + 9
+    cmp collision_buffer + 1
+    beq :+
+    bcs :++
+    lda #$00
+    rts
+    :
+    lda collision_buffer + 8
+    cmp collision_buffer
+    bcs :+
+    lda #$00
+    rts
+    :
+
+    lda ObjectHitboxYOffsets, y
+    clc
+    adc collision_buffer + 10
+    sta collision_buffer + 10
+    clc
+    adc ObjectHitboxHeights, y
+    sta collision_buffer + 11
+
+    lda collision_buffer + 5
+    cmp collision_buffer + 10
+    bcs :+
+    lda #$00
+    rts
+    :
+
+    lda collision_buffer + 11
+    cmp collision_buffer + 4
+    bcs :+
+    lda #$00
+    rts
+    :
+
+    lda #$01
+    rts
+
 ; Object index in X
 test_object_init:
     rts
@@ -1384,6 +1537,26 @@ ObjectInitPointersLow:
     .lobytes ObjectInitPointers
 ObjectInitPointersHigh:
     .hibytes ObjectInitPointers
+
+ObjectHitboxXOffsets:
+    .byte $00 ; Null object
+    .byte $00 ; Test object
+    .byte $03 ; Player
+
+ObjectHitboxYOffsets:
+    .byte $00 ; Null object
+    .byte $00 ; Test object
+    .byte $02 ; Player
+
+ObjectHitboxWidths:
+    .byte $00 ; Null object
+    .byte $10 ; Test object
+    .byte 11 ; Player
+
+ObjectHitboxHeights:
+    .byte $00 ; Null object
+    .byte $20 ; Test object
+    .byte 11 ; Player
 
 ; Sprite layout structure:
 ; 1 byte for the number of sprites, 1 byte for width in pixels, 1 byte for height in pixels

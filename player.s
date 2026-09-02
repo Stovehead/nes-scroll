@@ -464,6 +464,29 @@ player_step:
     sta player_y_velocity, x
     @after_release_jump:
     @after_air_code:
+    stx scratch
+    jsr load_object_collision
+    ldx scratch
+    ldy #$0F ; Check collision
+    @start_collision_check_loop:
+    lda object_ids, y
+    beq @end_collision_check_loop
+    cmp #$01
+    bne @end_collision_check_loop
+    sty scratch
+    jsr test_object_collision
+    ldy scratch
+    cmp #$00
+    beq @not_colliding
+    lda #$01
+    sta object_current_metasprites, y
+    jmp @end_collision_check_loop
+    @not_colliding:
+    lda #$00
+    sta object_current_metasprites, y
+    @end_collision_check_loop:
+    dey
+    bne @start_collision_check_loop
     lda scratch + 2 ; Load animation to play
     cmp object_animations_ids, x
     beq :+
