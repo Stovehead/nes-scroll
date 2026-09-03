@@ -576,11 +576,11 @@ dynamic_jump:
 ; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11
 handle_scroll:
     lda controller_input
-    and #BUTTON_UP
+    and #BUTTON_DOWN
     beq :++
     lda y_scroll
     sec
-    sbc #$01
+    sbc #$02
     cmp #239
     bcc :+
     sbc #16
@@ -589,11 +589,11 @@ handle_scroll:
     jmp :+++
     :
     lda controller_input
-    and #BUTTON_DOWN
+    and #BUTTON_UP
     beq :++
     lda y_scroll
     clc
-    adc #$01
+    adc #$02
     cmp #240
     bcc :+
     adc #15
@@ -1417,9 +1417,17 @@ load_object_collision:
     lda ObjectHitboxYOffsets, x
     clc
     adc collision_buffer + 4
+    cmp #240
+    bcc :+
+    adc #15
+    :
     sta collision_buffer + 4
     clc
     adc ObjectHitboxHeights, x
+    cmp #240
+    bcc :+
+    adc #15
+    :
     sta collision_buffer + 5
     rts
 
@@ -1483,9 +1491,17 @@ test_object_collision:
     lda ObjectHitboxYOffsets, y
     clc
     adc collision_buffer + 10
+    cmp #240
+    bcc :+
+    adc #15
+    :
     sta collision_buffer + 10
     clc
     adc ObjectHitboxHeights, y
+    cmp #240
+    bcc :+
+    adc #15
+    :
     sta collision_buffer + 11
 
     lda collision_buffer + 5
@@ -1764,21 +1780,21 @@ LevelTilePointersHigh:
 Level0Tiles:
     .byte $00, $00, $00, $00, $00, $00, $03, $04
     .byte $00, $01, $00, $00, $05, $06, $03, $04
-    .byte $00, $03, $02, $00, $00, $03, $03, $00
+    .byte $00, $03, $02, $00, $00, $03, $04, $00
     .byte $02, $00, $03, $00, $07, $03, $00, $00
-    .byte $00, $00, $01, $00, $03, $0A, $00, $04
-    .byte $00, $00, $00, $03, $00, $00, $03, $04
+    .byte $03, $00, $01, $00, $03, $0A, $00, $00
+    .byte $00, $00, $00, $03, $00, $00, $00, $03
     .byte $02, $00, $00, $03, $00, $00, $03, $04
     .byte $00, $00, $00, $03, $05, $06, $03, $04
     .byte $04, $04, $04, $04, $00, $00, $03, $04
     .byte $00, $01, $00, $00, $07, $09, $03, $04
-    .byte $00, $00, $00, $00, $08, $0A, $03, $04
-    .byte $00, $00, $00, $00, $00, $00, $03, $04
+    .byte $00, $00, $00, $00, $08, $0A, $00, $00
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
     .byte $00, $02, $00, $00, $00, $00, $03, $04
-    .byte $01, $00, $00, $00, $00, $05, $03, $04
-    .byte $00, $00, $00, $00, $00, $00, $03, $04
-    .byte $00, $00, $02, $00, $07, $09, $03, $04
-    .byte $02, $00, $00, $00, $08, $0A, $03, $04
+    .byte $01, $00, $03, $00, $00, $05, $03, $04
+    .byte $00, $00, $00, $03, $00, $00, $00, $03
+    .byte $00, $03, $02, $00, $07, $03, $00, $00
+    .byte $03, $00, $00, $00, $03, $0A, $00, $00
     .byte $00, $00, $01, $00, $00, $00, $03, $04
     .byte $00, $02, $00, $00, $00, $00, $03, $04
     .byte $00, $00, $00, $00, $05, $06, $03, $04

@@ -49,6 +49,10 @@ player_init:
     .if YOffset <> 0
     clc
     adc #YOffset
+    cmp #240
+    bcc :+
+    adc #15
+    :
     .endif
     sta scratch + 12 ; Store in parameter location
     jsr test_collision
