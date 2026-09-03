@@ -88,7 +88,7 @@ player_step:
     adc player_y_velocity, x
     sta scratch + 5 ; Store our new subpixel position for recombination later
     cmp #SUBPIXEL_MASK ; Check if subpixel overflowed
-    bcc :+ ; Skip incrementing position if it didn't
+    bcc @after_increment_y_position ; Skip incrementing position if it didn't
     and #PAGE_MASK ; Get whole part to add
     lsr
     lsr
@@ -103,31 +103,20 @@ player_step:
     ora #%11100000 ; Make negative before adding
     clc
     adc object_y_positions, x
-    sta object_y_positions, x
-    bcs @after_add_y_velocity ; Check if the Y position crossed a page (but there's no vertical scrolling, so this is actually unnecessary)
-    lda object_y_page_subpixels, x
-    and #PAGE_MASK
-    bne :+
-    lda #$00 ; Reset the page to 0 if it underflowed
-    sta object_y_positions, x
-    sta object_y_page_subpixels, x
-    sta player_y_velocity, x
-    jmp @after_add_y_velocity
+    bcs :+
+    sbc #15 ; If it underflowed, account for the 16 pixels at the bottom of the screen we can't use
     :
-    sec ; Decrement the page
-    sbc #SUBPIXEL_MASK + 1
-    sta object_y_page_subpixels, x
     jmp @after_add_y_velocity
     @positive_y_velocity:
     clc
     adc object_y_positions, x
-    sta object_y_positions, x
-    bcc :+
-    lda object_y_page_subpixels, x ; Increment page
-    adc #SUBPIXEL_MASK
-    sta object_y_page_subpixels, x
+    bcs :+
+    cmp #240
+    bcc @after_add_y_velocity
     :
+    adc #15
     @after_add_y_velocity:
+    sta object_y_positions, x
     lda scratch + 5 ; Apply subpixels we stored earlier
     and #SUBPIXEL_MASK
     sta scratch + 5
@@ -137,9 +126,9 @@ player_step:
     sta object_y_page_subpixels, x
     ldy #$08 ; Limit collision checks to 8 so that we don't infinitely loop
     lda player_y_velocity, x
-    bne :+
+    bne @after_increment_y_position
     jmp @after_vertical_collision ; Don't check vertical collision if Y velocity is 0
-    :
+    @after_increment_y_position:
     bpl @test_floor_collision_left ; Don't check ceiling collision if Y velocity is positive
     jmp @test_ceiling_collision_left
     @test_floor_collision_left:
