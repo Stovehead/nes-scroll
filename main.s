@@ -63,6 +63,7 @@ TERMINAL_VELOCITY = 64 ; Subpixels per frame
     vram_buffer_index: .res 1
     oam_offset: .res 1
     collision_buffer: .res 12
+    collision_wrap_flag: .res 1
 
 .bss
     object_ids: .res $10
@@ -1417,18 +1418,28 @@ load_object_collision:
     lda ObjectHitboxYOffsets, x
     clc
     adc collision_buffer + 4
+    bcs @wrap_around_y1
     cmp #240
-    bcc :+
+    bcc @no_wrap_y1
+    @wrap_around_y1:
     adc #15
-    :
+    @no_wrap_y1:
     sta collision_buffer + 4
     clc
     adc ObjectHitboxHeights, x
+    bcs @wrap_around_y2
     cmp #240
-    bcc :+
+    bcc @no_wrap_y2
+    @wrap_around_y2:
     adc #15
-    :
     sta collision_buffer + 5
+    lda #$01
+    sta collision_wrap_flag
+    rts
+    @no_wrap_y2:
+    sta collision_buffer + 5
+    lda #$00
+    sta collision_wrap_flag
     rts
 
 ; Object 2 in Y
@@ -1491,23 +1502,53 @@ test_object_collision:
     lda ObjectHitboxYOffsets, y
     clc
     adc collision_buffer + 10
+    bcs @wrap_around_y1
     cmp #240
-    bcc :+
+    bcc @no_wrap_y1
+    @wrap_around_y1:
     adc #15
-    :
+    @no_wrap_y1:
     sta collision_buffer + 10
     clc
     adc ObjectHitboxHeights, y
+    bcs @wrap_around_y2
     cmp #240
-    bcc :+
-    adc #15
+    bcc @no_wrap_y2
+    @wrap_around_y2:
+    ldy collision_wrap_flag
+    beq :+
+    lda #$01
+    rts
     :
+    adc #15
     sta collision_buffer + 11
+    jmp @wrap_check
+    @no_wrap_y2:
+    sta collision_buffer + 11
+    ldy collision_wrap_flag
+    bne @wrap_check
 
     lda collision_buffer + 5
     cmp collision_buffer + 10
     bcs :+
     lda #$00
+    rts
+    :
+
+    lda collision_buffer + 11
+    cmp collision_buffer + 4
+    bcs :+
+    lda #$00
+    rts
+    :
+
+    lda #$01
+    rts
+    @wrap_check:
+    lda collision_buffer + 5
+    cmp collision_buffer + 10
+    bcc :+
+    lda #$01
     rts
     :
 
