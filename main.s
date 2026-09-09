@@ -576,36 +576,20 @@ dynamic_jump:
 
 ; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11
 handle_scroll:
-    lda controller_input
-    and #BUTTON_DOWN
-    beq :++
-    lda y_scroll
-    sec
-    sbc #$02
-    cmp #239
-    bcc :+
-    sbc #16
-    :
-    sta y_scroll
-    jmp :+++
-    :
-    lda controller_input
-    and #BUTTON_UP
-    beq :++
-    lda y_scroll
-    clc
-    adc #$02
-    cmp #240
-    bcc :+
-    adc #15
-    :
-    sta y_scroll
-    :
     lda object_ids ; Check if slot 0 is the player
     cmp #$02
     beq :+
     rts ; Return if it's not the player
     :
+    lda object_y_positions
+    adc #$07 + 120
+    bcs :+
+    cmp #240
+    bcc :++
+    :
+    adc #15
+    :
+    sta y_scroll
     ldx current_level ; Store this for later
     lda LevelLengths, x
     sta scratch + 2
