@@ -1758,7 +1758,7 @@ AnimPlayerIdleLengths:
     .byte ANIM_PLAYER_IDLE_LENGTH
 
 AnimPlayerWalkFrames:
-    .byte $02, $03, $02, $04
+    .byte $03, $02, $04, $02
 
 AnimPlayerWalkLengths:
     .byte $08, $08, $08, $08
