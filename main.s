@@ -48,6 +48,7 @@ TERMINAL_VELOCITY = 64 ; Subpixels per frame
     frame_count: .res 1
     background_color: .res 1
     background_palettes: .res 12
+    brightness: .res 1
     sprite_palettes: .res 12
     current_page: .res 1
     x_scroll: .res 1
@@ -296,7 +297,26 @@ nmi:
     sta $0100
     sta vram_buffer_index
 
+.macro apply_brightness
+    clc
+    adc scratch
+    bpl :+
+    lda #$0F
+    jmp :++
+    :
+    cmp #$40
+    bcc :+
+    lda #$30
+    :
+.endmacro
+
 @push_palettes_to_ppu:
+    lda brightness
+    asl
+    asl
+    asl
+    asl
+    sta scratch
     lda current_ppu_ctrl
     and #%11111011 ; Set PPU increment to right
     sta current_ppu_ctrl
@@ -310,22 +330,21 @@ nmi:
     .if i <> 0
     sta PPUDATA
     .endif
-    lda background_palettes + i * 3
-    sta PPUDATA
-    lda background_palettes + i * 3 + 1
-    sta PPUDATA
-    lda background_palettes + i * 3 + 2
+    .repeat 3, j
+    lda background_palettes + i * 3 + j
+    apply_brightness
     sta PPUDATA
     .endrepeat
+    .endrepeat
     lda background_color
+    apply_brightness
     .repeat 4, i
     sta PPUDATA
-    lda sprite_palettes + i * 3
+    .repeat 3, j
+    lda sprite_palettes + i * 3 + j
+    apply_brightness
     sta PPUDATA
-    lda sprite_palettes + i * 3 + 1
-    sta PPUDATA
-    lda sprite_palettes + i * 3 + 2
-    sta PPUDATA
+    .endrepeat
     .endrepeat
 
     bit PPUSTATUS ; Set scroll
@@ -343,6 +362,18 @@ nmi:
 game_logic:
     inc frame_count
     jsr read_controllers
+
+    lda buttons_pressed
+    and #BUTTON_DOWN
+    beq :+
+    dec brightness
+    jmp :++
+    :
+    lda buttons_pressed
+    and #BUTTON_UP
+    beq :+
+    inc brightness
+    :
 
     ; Step code for each object
     ldx #$00
