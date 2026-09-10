@@ -157,55 +157,29 @@ reset:
 
 main:
 @load_palettes:
-    lda #$26
-    sta background_color
-    lda #$30
-    sta background_palettes
-    lda #$34
-    sta background_palettes + 1
-    lda #$0F
-    sta background_palettes + 2
-    lda #$2C
-    sta background_palettes + 3
-    lda #$13
-    sta background_palettes + 4
-    lda #$12
-    sta background_palettes + 5
-    lda #$35
-    sta background_palettes + 6
-    lda #$05
-    sta background_palettes + 7
-    lda #$25
-    sta background_palettes + 8
-    lda #$15
-    sta background_palettes + 9
-    lda #$16
-    sta background_palettes + 10
-    lda #$0F
-    sta background_palettes + 11
-    lda #$01
+    lda #$22
     sta sprite_palettes
     lda #$12
     sta sprite_palettes + 1
-    lda #$22
+    lda #$02
     sta sprite_palettes + 2
-    lda #$04
+    lda #$24
     sta sprite_palettes + 3
     lda #$14
     sta sprite_palettes + 4
-    lda #$24
+    lda #$04
     sta sprite_palettes + 5
-    lda #$06
+    lda #$26
     sta sprite_palettes + 6
     lda #$16
     sta sprite_palettes + 7
-    lda #$26
+    lda #$06
     sta sprite_palettes + 8
-    lda #$09
+    lda #$29
     sta sprite_palettes + 9
     lda #$19
     sta sprite_palettes + 10
-    lda #$29
+    lda #$09
     sta sprite_palettes + 11
 
     ldx #$00 ; Init OAM
@@ -1001,7 +975,10 @@ read_controllers:
 ; Level number in A register
 ; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09
 load_level:
-    bit PPUSTATUS
+    cmp NumLevels
+    bcc :+
+    jmp reset ; Reset if we try to load an invalid level
+    :
     sta current_level
     tax
     lda current_ppu_ctrl
@@ -1027,10 +1004,39 @@ load_level:
     and #%11100111 ; Disable rendering
     sta current_ppu_mask
     sta PPUMASK
+
+    lda LevelBackgroundColors, x
+    sta background_color
+    lda LevelBackgroundPalette0Color0, x
+    sta background_palettes
+    lda LevelBackgroundPalette0Color1, x
+    sta background_palettes + 1
+    lda LevelBackgroundPalette0Color2, x
+    sta background_palettes + 2
+    lda LevelBackgroundPalette1Color0, x
+    sta background_palettes + 3
+    lda LevelBackgroundPalette1Color1, x
+    sta background_palettes + 4
+    lda LevelBackgroundPalette1Color2, x
+    sta background_palettes + 5
+    lda LevelBackgroundPalette2Color0, x
+    sta background_palettes + 6
+    lda LevelBackgroundPalette2Color1, x
+    sta background_palettes + 7
+    lda LevelBackgroundPalette2Color2, x
+    sta background_palettes + 8
+    lda LevelBackgroundPalette3Color0, x
+    sta background_palettes + 9
+    lda LevelBackgroundPalette3Color1, x
+    sta background_palettes + 10
+    lda LevelBackgroundPalette3Color2, x
+    sta background_palettes + 11
+
     lda LevelTilePointersLow, x
     sta scratch
     lda LevelTilePointersHigh, x
     sta scratch + 1
+    bit PPUSTATUS
 
     ; First load the tiles of the column of metametatiles into a buffer
     ; Update attributes along the way
@@ -1829,6 +1835,48 @@ MetaMetaTilesBottomRight:
 
 MetaMetaTileAttributes:
     .byte $00, $00, $00, $55, $55, $FF, $55, $AA, $AA, $AA, $AA
+
+NumLevels:
+    .byte $01
+
+LevelBackgroundColors:
+    .byte $26
+
+LevelBackgroundPalette0Color0:
+    .byte $30
+
+LevelBackgroundPalette0Color1:
+    .byte $34
+
+LevelBackgroundPalette0Color2:
+    .byte $0F
+
+LevelBackgroundPalette1Color0:
+    .byte $2C
+
+LevelBackgroundPalette1Color1:
+    .byte $12
+
+LevelBackgroundPalette1Color2:
+    .byte $13
+
+LevelBackgroundPalette2Color0:
+    .byte $35
+
+LevelBackgroundPalette2Color1:
+    .byte $25
+
+LevelBackgroundPalette2Color2:
+    .byte $05
+
+LevelBackgroundPalette3Color0:
+    .byte $0F
+
+LevelBackgroundPalette3Color1:
+    .byte $15
+
+LevelBackgroundPalette3Color2:
+    .byte $16
 
 LevelLengths:
     .byte $05
