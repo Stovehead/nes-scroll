@@ -159,13 +159,13 @@ main:
 @load_palettes:
     lda #$26
     sta background_color
-    lda #$20
+    lda #$30
     sta background_palettes
     lda #$34
     sta background_palettes + 1
     lda #$0F
     sta background_palettes + 2
-    lda #$1C
+    lda #$2C
     sta background_palettes + 3
     lda #$13
     sta background_palettes + 4
@@ -297,26 +297,31 @@ nmi:
     sta $0100
     sta vram_buffer_index
 
-.macro apply_brightness
-    clc
-    adc scratch
-    bpl :+
-    lda #$0F
-    jmp :++
-    :
-    cmp #$40
-    bcc :+
-    lda #$30
-    :
-.endmacro
-
 @push_palettes_to_ppu:
+    lda #>Colors
+    sta scratch + 1
+    lda #<Colors
+    sta scratch
     lda brightness
     asl
     asl
     asl
     asl
+    clc
+    bmi @negative_brightness
+    adc scratch
     sta scratch
+    lda scratch + 1
+    adc #$00
+    sta scratch + 1
+    jmp @after_calculate_color_table_address
+    @negative_brightness:
+    adc scratch
+    sta scratch
+    lda scratch + 1
+    sbc #$00
+    sta scratch + 1
+    @after_calculate_color_table_address:
     lda current_ppu_ctrl
     and #%11111011 ; Set PPU increment to right
     sta current_ppu_ctrl
@@ -331,18 +336,18 @@ nmi:
     sta PPUDATA
     .endif
     .repeat 3, j
-    lda background_palettes + i * 3 + j
-    apply_brightness
+    ldy background_palettes + i * 3 + j
+    lda (scratch), y
     sta PPUDATA
     .endrepeat
     .endrepeat
-    lda background_color
-    apply_brightness
+    ldy background_color
+    lda (scratch), y
     .repeat 4, i
     sta PPUDATA
     .repeat 3, j
-    lda sprite_palettes + i * 3 + j
-    apply_brightness
+    ldy sprite_palettes + i * 3 + j
+    lda (scratch), y
     sta PPUDATA
     .endrepeat
     .endrepeat
@@ -996,6 +1001,7 @@ read_controllers:
 ; Level number in A register
 ; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09
 load_level:
+    bit PPUSTATUS
     sta current_level
     tax
     lda current_ppu_ctrl
@@ -1875,6 +1881,21 @@ Level0Tiles:
     .byte $00, $00, $01, $00, $00, $00, $03, $04
     .byte $02, $00, $00, $00, $00, $00, $03, $04
 
+.align 256
+
+    .byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+    .byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+    .byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+    .byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+Colors:
+    .byte $00, $01, $02, $03, $04, $05, $06, $07, $08, $09, $0A, $0B, $0C, $0F, $0E, $0F
+    .byte $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $1A, $1B, $1C, $1D, $1E, $1F
+    .byte $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $2A, $2B, $2C, $2D, $2E, $2F
+    .byte $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $3A, $3B, $3C, $3D, $3E, $3F
+    .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
+    .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
+    .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
+    .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
 
 .segment "CHARS"
     .incbin "bg.bin"
