@@ -367,7 +367,7 @@ game_logic:
     lda #$00
     sta game_state
     dec frame_done
-    rti
+    jmp nmi
     :
 
     lda buttons_pressed
