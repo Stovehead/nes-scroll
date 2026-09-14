@@ -354,6 +354,21 @@ game_logic:
     inc brightness
     :
 
+    lda frame_count ; Shuffle palette for computer level
+    and #%00000011
+    cmp #$00
+    bne :+
+    lda current_level
+    cmp #$01
+    bne :+
+    ldx background_palettes + 6
+    lda background_palettes + 7
+    sta background_palettes + 6
+    lda background_palettes + 8
+    sta background_palettes + 7
+    stx background_palettes + 8
+    :
+
     ; Step code for each object
     ldx #$00
     @start_step_code_loop:
