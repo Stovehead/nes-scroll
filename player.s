@@ -358,7 +358,7 @@ player_step:
     sta object_x_page_subpixels, x
     lda object_x_positions, x
     clc
-    adc #13
+    adc #14
     and #$F0
     sec
     sbc #14
@@ -380,7 +380,7 @@ player_step:
     sta object_x_page_subpixels, x
     lda object_x_positions, x
     clc
-    adc #13
+    adc #14
     and #$F0
     sec
     sbc #14
@@ -427,7 +427,7 @@ player_step:
     sbc #3
     and #$F0
     clc
-    adc #14
+    adc #15
     sta object_x_positions, x
     lda #$00
     sta player_x_velocity, x

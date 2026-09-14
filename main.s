@@ -1329,11 +1329,11 @@ test_collision:
     tax
     lda scratch + 11
     and #$1F
-    cmp #$0F
+    cmp #$10
     bcs @right_of_meta_meta_tile
     lda scratch + 12
     and #$1F
-    cmp #$0F
+    cmp #$10
     bcs @bottom_left_of_meta_meta_tile
     lda MetaMetaTilesTopLeft, x
     jmp @after_get_meta_tile
@@ -1343,7 +1343,7 @@ test_collision:
     @right_of_meta_meta_tile:
     lda scratch + 12
     and #$1F
-    cmp #$0F
+    cmp #$10
     bcs @bottom_right_of_meta_meta_tile
     lda MetaMetaTilesTopRight, x
     jmp @after_get_meta_tile
