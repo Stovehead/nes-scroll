@@ -427,7 +427,7 @@ player_step:
     sbc #3
     and #$F0
     clc
-    adc #15
+    adc #14
     sta object_x_positions, x
     lda #$00
     sta player_x_velocity, x
