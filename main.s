@@ -1894,7 +1894,7 @@ LevelBackgroundPalette3Color2:
     .byte $16, $00
 
 LevelLengths:
-    .byte $05
+    .byte $05, $20
 .define LevelTilePointers \
     Level0Tiles, \
     Level1Tiles
