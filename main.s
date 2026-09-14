@@ -234,8 +234,19 @@ nmi:
 @vblank_routine:
     lda game_state ; Check if we load level
     bne :+
-    lda #$01
     jmp load_level
+    :
+    cmp #LEVEL_LOADED
+    bne :+
+    lda #LEVEL_READY
+    sta game_state
+    jmp :++
+    :
+    cmp #LEVEL_READY
+    bne :+
+    lda current_ppu_mask
+    ora #%00011000 ; Turn rendering back on at next NMI
+    sta current_ppu_mask
     :
     inc frame_done ; Set back to 0
     pla ; Restore A register, not really needed
@@ -341,6 +352,23 @@ nmi:
 game_logic:
     inc frame_count
     jsr read_controllers
+
+    lda buttons_pressed
+    and #BUTTON_SELECT
+    beq :++
+    lda current_level
+    clc
+    adc #$01
+    cmp NumLevels
+    bcc :+
+    lda #$00
+    :
+    sta current_level
+    lda #$00
+    sta game_state
+    dec frame_done
+    rti
+    :
 
     lda buttons_pressed
     and #BUTTON_DOWN
@@ -985,31 +1013,33 @@ read_controllers:
     and controller_input_prev
     sta buttons_released
     rts
-    
 
-; Level number in A register
 ; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09
 load_level:
     cmp NumLevels
     bcc :+
     jmp reset ; Reset if we try to load an invalid level
     :
-    sta current_level
-    tax
+    lda #$00
+    ldx #$0F
+    :
+    sta object_ids, x
+    dex
+    bne :-
+    sta scratch + 9 ; Current column number
+    sta scratch + 4
+    sta current_page ; Reset scroll-related variables
+    sta x_scroll
+    sta y_scroll
+    jsr player_init
+    ldx current_level
     lda current_ppu_ctrl
     lda #$20 ; Get ready to update nametable
     sta scratch + 3
-    lda #$00
-    sta scratch + 4
     lda #$23 ; Get ready to update attributes
     sta scratch + 7
     lda #$C0
     sta scratch + 8
-    lda #$00
-    sta scratch + 9 ; Current column number
-    sta current_page ; Reset scroll-related variables
-    sta x_scroll
-    sta y_scroll
     lda current_ppu_ctrl
     and #%01111100 ; Set scroll to top left and disable NMI
     ora #%00000100 ; Set PPU increment to down
@@ -1269,9 +1299,6 @@ load_level:
 
     lda #LEVEL_LOADED
     sta game_state
-    lda current_ppu_mask
-    ora #%00011000 ; Turn rendering back on at next NMI
-    sta current_ppu_mask
     lda PPUSTATUS
     lda current_ppu_ctrl
     ora #%10000000 ; Turn NMI back on
@@ -2211,9 +2238,9 @@ Level1Tiles:
     .byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
 Colors:
     .byte $00, $01, $02, $03, $04, $05, $06, $07, $08, $09, $0A, $0B, $0C, $0F, $0E, $0F
-    .byte $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $1A, $1B, $1C, $1D, $1E, $1F
-    .byte $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $2A, $2B, $2C, $2D, $2E, $2F
-    .byte $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $3A, $3B, $3C, $3D, $3E, $3F
+    .byte $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $1A, $1B, $1C, $1D, $1E, $00
+    .byte $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $2A, $2B, $2C, $2D, $2E, $10
+    .byte $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $3A, $3B, $3C, $3D, $3E, $30
     .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
     .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
     .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
