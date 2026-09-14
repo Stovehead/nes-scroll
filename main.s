@@ -41,6 +41,7 @@ COLLISION_LEFT =    %00001000
 GRAVITY = 2 ; Subpixels per frame
 LIGHT_GRAVITY = 1 ; Subpixels per frame
 TERMINAL_VELOCITY = 64 ; Subpixels per frame
+LIGHTS_OFF = %00000001
 
 .zeropage
     scratch: .res $10
@@ -65,6 +66,7 @@ TERMINAL_VELOCITY = 64 ; Subpixels per frame
     oam_offset: .res 1
     collision_buffer: .res 12
     collision_wrap_flag: .res 1
+    level_flags: .res 1
 
 .bss
     object_ids: .res $10
@@ -77,16 +79,18 @@ TERMINAL_VELOCITY = 64 ; Subpixels per frame
     object_animations_frames: .res $10
     object_animation_timers: .res $10
     object_current_metasprites: .res $10
+    object_indices: .res $10
     object_variables_0: .res $10
     object_variables_1: .res $10
     object_variables_2: .res $10
     object_variables_3: .res $10
     object_variables_4: .res $10
-    object_variables_5: .res $10
-    tile_buffer_1: .res 30
-    tile_buffer_2: .res 30
-    tile_buffer_3: .res 30
-    tile_buffer_4: .res 30
+    object_spawned_flags: .res 32
+    object_dead_flags: .res 32
+    tile_buffer_1 = object_spawned_flags
+    tile_buffer_2 = tile_buffer_1 + 30
+    tile_buffer_3 = tile_buffer_2 + 30
+    tile_buffer_4 = tile_buffer_3 + 30
 
 .segment "HEADER"  
     .byte $4E, $45, $53, $1A    ; iNES header identifier
@@ -368,6 +372,14 @@ game_logic:
     sta game_state
     dec frame_done
     jmp nmi
+    :
+
+    lda buttons_pressed
+    and #BUTTON_START
+    beq :+
+    lda #$01
+    ldy #$00
+    jsr try_spawn_object
     :
 
     lda buttons_pressed
@@ -1296,6 +1308,13 @@ load_level:
     jmp @load_column
     :
 
+    lda #$00 ; Clear object flags
+    ldx #32
+    :
+    dex
+    sta object_spawned_flags, x
+    sta object_dead_flags, x
+    bne :-
 
     lda #LEVEL_LOADED
     sta game_state
@@ -1459,6 +1478,27 @@ spawn_object:
     lda ObjectInitPointersHigh, y
     sta scratch + 1
     jmp (scratch)
+
+; Object ID in A, object index in Y
+; If successful, returns object index in X
+; Else returns $FF in X
+try_spawn_object:
+    pha
+    ldx #$01
+    :
+    lda object_ids, x
+    beq @found_empty_slot
+    inx
+    cpx #$10
+    bcc :-
+    pla
+    ldx #$FF
+    rts
+    @found_empty_slot:
+    tya
+    sta object_indices, x
+    pla
+    jmp spawn_object
 
 ; Object 1 in X
 load_object_collision:
@@ -1636,21 +1676,14 @@ test_object_collision:
     lda #$01
     rts
 
-; Object index in X
-test_object_init:
-    rts
-
-; Object index in X
-test_object_step:
-    rts
-
+.include "light_switch.s"
 .include "player.s"
 
 NumObjects:
     .byte $03
 .define ObjectStepPointers \
     $0000, \
-    test_object_step, \
+    light_switch_step, \
     player_step
 ObjectStepPointersLow:
     .lobytes ObjectStepPointers
@@ -1659,7 +1692,7 @@ ObjectStepPointersHigh:
 
 .define ObjectInitPointers \
     $0000, \
-    test_object_init, \
+    light_switch_init, \
     player_init
 ObjectInitPointersLow:
     .lobytes ObjectInitPointers
@@ -1670,34 +1703,43 @@ ObjectHitboxXOffsets:
     .byte $00 ; Null object
     .byte $00 ; Test object
     .byte $03 ; Player
+    .byte $00 ; Light switch
 
 ObjectHitboxYOffsets:
     .byte $00 ; Null object
     .byte $00 ; Test object
     .byte $02 ; Player
+    .byte $00 ; Light switch
 
 ObjectHitboxWidths:
     .byte $00 ; Null object
     .byte $10 ; Test object
     .byte 11 ; Player
+    .byte $08 ; Light switch
 
 ObjectHitboxHeights:
     .byte $00 ; Null object
     .byte $20 ; Test object
     .byte 11 ; Player
+    .byte $10 ; Light switch
 
 ; Sprite layout structure:
 ; 1 byte for the number of sprites, 1 byte for width in pixels, 1 byte for height in pixels
 ; For each sprite, 1 byte for index, 1 byte for x offset, 1 byte for y offset, and 1 byte for attributes
 NumMetaSprites:
-    .byte $06
+    .byte $0B
 .define MetaSpritePointers \
     TestMetaSprite0, \
     TestMetaSprite1, \
     PlayerIdleSprite, \
     PlayerWalkSprite0, \
     PlayerWalkSprite1, \
-    PlayerJumpSprite
+    PlayerJumpSprite, \
+    LightSwitchSprite0, \
+    LightSwitchSprite1, \
+    LightSwitchSprite2, \
+    LightSwitchSprite3, \
+    LightSwitchSprite4
 MetaSpritePointersLow:
     .lobytes MetaSpritePointers
 MetaSpritePointersHigh:
@@ -1813,16 +1855,70 @@ PlayerJumpSprite:
     .byte $00       ; Y offset
     .byte %00000000 ; Attributes
 
+LightSwitchSprite0:
+    .byte $01 ; Num sprites
+    .byte $08 ; Width
+    .byte $10 ; Height
+
+    .byte $01       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000010 ; Attributes
+
+LightSwitchSprite1:
+    .byte $01 ; Num sprites
+    .byte $08 ; Width
+    .byte $10 ; Height
+
+    .byte $03       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000010 ; Attributes
+
+LightSwitchSprite2:
+    .byte $01 ; Num sprites
+    .byte $08 ; Width
+    .byte $10 ; Height
+
+    .byte $05       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000010 ; Attributes
+
+LightSwitchSprite3:
+    .byte $01 ; Num sprites
+    .byte $08 ; Width
+    .byte $10 ; Height
+
+    .byte $03       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000010 ; Attributes
+
+LightSwitchSprite4:
+    .byte $01 ; Num sprites
+    .byte $08 ; Width
+    .byte $10 ; Height
+
+    .byte $01       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000010 ; Attributes
+
 ANIM_PLAYER_IDLE = 0
 ANIM_PLAYER_WALK = 1
 ANIM_PLAYER_JUMP = 2
+ANIM_LIGHT_SWITCH_DOWN = 3
+ANIM_LIGHT_SWITCH_UP = 4
 
 NumAnimations:
-    .byte $03
+    .byte $05
 .define AnimationFramePointers \
     AnimPlayerIdleFrames, \
     AnimPlayerWalkFrames, \
-    AnimPlayerJumpFrames
+    AnimPlayerJumpFrames, \
+    AnimLightSwitchDownFrames, \
+    AnimLightSwitchUpFrames
 AnimationFramePointersLow:
     .lobytes AnimationFramePointers
 AnimationFramePointersHigh:
@@ -1831,7 +1927,9 @@ AnimationFramePointersHigh:
 .define AnimationFrameLengthPointers \
     AnimPlayerIdleLengths, \
     AnimPlayerWalkLengths, \
-    AnimPlayerJumpLengths
+    AnimPlayerJumpLengths, \
+    AnimLightSwitchDownLengths, \
+    AnimLightSwitchUpLengths
 AnimationFrameLengthPointersLow:
     .lobytes AnimationFrameLengthPointers
 AnimationFrameLengthPointersHigh:
@@ -1839,7 +1937,7 @@ AnimationFrameLengthPointersHigh:
 
 ; Highest bit determines whether animation loops or not
 AnimationLengths:
-    .byte 1, 128 + 4, 1
+    .byte 1, 128 + 4, 1, 5, 5
 
 AnimPlayerIdleFrames:
     .byte ANIM_PLAYER_IDLE_FRAME
@@ -1859,6 +1957,18 @@ AnimPlayerJumpFrames:
 AnimPlayerJumpLengths:
     .byte $00
 
+AnimLightSwitchDownFrames:
+    .byte $06, $07, $08, $09, $0A
+
+AnimLightSwitchDownLengths:
+    .byte $03, $03, $03, $03, $03
+
+AnimLightSwitchUpFrames:
+    .byte $0A, $09, $08, $07, $06
+
+AnimLightSwitchUpLengths:
+    .byte $03, $03, $03, $03, $03
+
 MetaTilesTopLeft:
     .byte $00, $00, $0E, $14, $16, $00, $02, $07, $09, $42, $43, $00, $1F, $26, $28, $00, $34, $00, $3E, $00, $1B, $1D, $20, $25, $2E, $30, $31, $30, $2E, $3A, $3C, $3A, $44, $46, $54, $56, $48, $4A, $58, $5A, $63, $65, $64, $64, $6E, $70, $72, $74, $6E, $20, $78, $7A, $91, $6E, $83, $7F, $74, $6E, $20, $8A, $8B, $20, $8A, $6E, $20, $92, $94, $9A, $9C
 MetaTilesTopRight:
@@ -1872,16 +1982,16 @@ MetaTileCollision:
     .byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $0F, $0F, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
 
 MetaMetaTilesTopLeft:
-    .byte $00, $01, $05, $09, $0A, $0B, $0F, $00, $14, $18, $1A, $20, $24, $28, $2A, $2B, $28, $2A, $2A, $35, $37, $37, $2C, $2E, $2E, $2B, $3D, $2F, $24, $20, $29, $28, $3F, $2C, $41
+    .byte $00, $01, $05, $09, $0A, $0B, $0F, $00, $14, $18, $1A, $20, $24, $28, $2A, $2B, $28, $2A, $2A, $35, $37, $37, $2C, $2E, $2E, $2B, $3D, $2F, $24, $20, $29, $28, $3F, $2C, $41, $20, $24, $20, $24
 MetaMetaTilesTopRight:
-    .byte $00, $02, $06, $09, $0A, $0C, $10, $13, $15, $19, $1B, $21, $25, $29, $29, $25, $29, $29, $2B, $36, $36, $38, $2D, $2D, $34, $21, $25, $21, $25, $21, $2B, $2B, $38, $2F, $42
+    .byte $00, $02, $06, $09, $0A, $0C, $10, $13, $15, $19, $1B, $21, $25, $29, $29, $25, $29, $29, $2B, $36, $36, $38, $2D, $2D, $34, $21, $25, $21, $25, $21, $2B, $2B, $38, $2F, $42, $2C, $25, $21, $25
 MetaMetaTilesBottomLeft:
-    .byte $00, $03, $07, $0A, $0A, $0D, $11, $13, $16, $1C, $1E, $22, $26, $2C, $2E, $2F, $30, $32, $32, $39, $3B, $3B, $22, $26, $22, $33, $3E, $22, $26, $2B, $2D, $30, $39, $22, $43
+    .byte $00, $03, $07, $0A, $0A, $0D, $11, $13, $16, $1C, $1E, $22, $26, $2C, $2E, $2F, $30, $32, $32, $39, $3B, $3B, $22, $26, $22, $33, $3E, $22, $26, $2B, $2D, $30, $39, $22, $43, $22, $2A, $28, $29
 MetaMetaTilesBottomRight:
-    .byte $00, $04, $08, $0A, $0A, $0E, $12, $16, $17, $1D, $1F, $23, $27, $2D, $2D, $27, $31, $31, $33, $3A, $3A, $3C, $23, $27, $23, $23, $27, $23, $28, $23, $2F, $33, $40, $23, $44
+    .byte $00, $04, $08, $0A, $0A, $0E, $12, $16, $17, $1D, $1F, $23, $27, $2D, $2D, $27, $31, $31, $33, $3A, $3A, $3C, $23, $27, $23, $23, $27, $23, $28, $23, $2F, $33, $40, $23, $44, $23, $29, $29, $2B
 
 MetaMetaTileAttributes:
-    .byte $00, $00, $00, $55, $55, $FF, $55, $AA, $AA, $AA, $AA, $AA, $AA, $00, $00, $88, $00, $00, $00, $00, $00, $00, $A0, $A0, $A0, $88, $88, $A8, $2A, $8A, $00, $00, $00, $A0, $55
+    .byte $00, $00, $00, $55, $55, $FF, $55, $AA, $AA, $AA, $AA, $AA, $AA, $00, $00, $88, $00, $00, $00, $00, $00, $00, $A0, $A0, $A0, $88, $88, $A8, $2A, $8A, $00, $00, $00, $A0, $55, $A2, $0A, $0A, $0A
 
 NumLevels:
     .byte $02
@@ -1989,7 +2099,7 @@ Level1Tiles:
     .byte $0C, $0E, $0C, $11, $17, $0B, $1E, $1B
     .byte $1C, $1E, $0B, $11, $17, $0C, $0B, $0C
     .byte $10, $16, $0C, $11, $17, $0C, $0C, $0B
-    .byte $11, $17, $0B, $12, $17, $0C, $0C, $0C
+    .byte $11, $17, $0B, $12, $18, $0C, $0C, $0C
     .byte $12, $18, $0C, $1D, $0D, $20, $20, $21
     .byte $0B, $0C, $0B, $0B, $1E, $1B, $0C, $0C
     .byte $0D, $0C, $0C, $0C, $0C, $0B, $0C, $0B
@@ -2011,15 +2121,15 @@ Level1Tiles:
     .byte $0D, $0B, $0C, $11, $17, $0B, $0C, $0B
     .byte $0E, $0C, $0C, $11, $17, $0C, $0C, $0B
     .byte $20, $20, $20, $20, $21, $0C, $0C, $1F
-    .byte $0B, $0C, $0C, $0B, $0B, $0C, $0C, $0C
-    .byte $0B, $0C, $0C, $0B, $0B, $0B, $0C, $0B
-    .byte $0B, $0B, $0C, $0B, $0B, $0B, $0C, $0B
-    .byte $0C, $0B, $0C, $0B, $0C, $0B, $0B, $0B
-    .byte $0C, $0C, $0B, $0B, $0C, $0C, $0C, $0C
-    .byte $0C, $0C, $0B, $0B, $0C, $0C, $0B, $0C
-    .byte $0B, $0C, $0B, $0C, $0B, $0C, $0B, $0C
-    .byte $0B, $0C, $0C, $0C, $0B, $0B, $0B, $0B
-    .byte $0C, $0B, $0B, $0B, $0C, $0B, $0B, $0B
+    .byte $17, $0C, $0C, $1D, $22, $0C, $1C, $0E
+    .byte $17, $0C, $0B, $0B, $0B, $0B, $22, $0E
+    .byte $18, $0B, $25, $16, $0B, $0D, $22, $0E
+    .byte $1B, $0B, $22, $18, $0C, $1E, $0B, $0F
+    .byte $0C, $0C, $0B, $10, $13, $16, $0C, $0C
+    .byte $1C, $22, $0B, $12, $15, $18, $0B, $0B
+    .byte $20, $20, $20, $20, $21, $0C, $0B, $1F
+    .byte $16, $0C, $0C, $0C, $0B, $0B, $0B, $10
+    .byte $18, $0B, $0B, $0B, $0C, $0B, $0B, $12
     .byte $0B, $0C, $0B, $0C, $0B, $0B, $0B, $0B
     .byte $0C, $0C, $0B, $0C, $0C, $0C, $0B, $0B
     .byte $0C, $0B, $0B, $0C, $0C, $0C, $0B, $0C
