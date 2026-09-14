@@ -1319,6 +1319,11 @@ test_collision:
     lda #$00
     sta scratch + 9
     lda scratch + 10
+    cmp LevelLengths, x ; Make everything offscreen solid
+    bcc :+
+    lda #$0F
+    rts
+    :
     clc
     asl ; Each page has 64 meta meta tiles
     rol scratch + 9
