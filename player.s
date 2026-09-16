@@ -1,3 +1,6 @@
+ANIM_PLAYER_IDLE_FRAME = $02
+ANIM_PLAYER_IDLE_LENGTH = $FF
+
 ; Object index in X
 player_init:
     lda #$10

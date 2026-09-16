@@ -30,8 +30,6 @@ OBJECT_FLIPPED_V =      %10000000
 OBJECT_FLIPPED_H =      %01000000
 OBJECT_IS_PRIORITY =    %00100000
 OBJECT_IS_HIDDEN =      %00010000
-ANIM_PLAYER_IDLE_FRAME = $02
-ANIM_PLAYER_IDLE_LENGTH = $FF
 SUBPIXEL_MASK = %00000111
 PAGE_MASK = %11111000
 COLLISION_TOP =     %00000001
@@ -1958,7 +1956,7 @@ AnimPlayerJumpLengths:
     .byte $00
 
 AnimLightSwitchDownFrames:
-    .byte $06, $07, $08, $09, $0A
+    .byte ANIM_LIGHT_SWITCH_DOWN_FRAME_0, $07, $08, $09, $0A
 
 AnimLightSwitchDownLengths:
     .byte $03, $03, $03, $03, $03
