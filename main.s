@@ -436,10 +436,50 @@ game_logic:
     lda #$00
     sta oam_offset ; Number of bytes in OAM we've used so far
     sta scratch + 2 ; Flag for if we've made any sprites
+    ldx #$00
+    jsr build_sprite
     lda frame_count
     and #$0F
+    bne :+
+    clc
+    adc #$07
+    :
     sta scratch + 3 ; Index to start from
     tax
+    @start_build_sprite_loop:
+    jsr build_sprite
+    txa
+    clc
+    adc #$07
+    and #$0F
+    bne :+
+    clc
+    adc #$07
+    :
+    cmp scratch + 3
+    beq :+
+    tax
+    jmp @start_build_sprite_loop ; Loop until we reach the one we started on
+    :
+    ldy oam_offset
+    bne :+
+    lda scratch + 2
+    bne @after_ff_fill_loop
+    :
+    lda #$FF
+    @start_ff_fill_loop:
+    sta OAMBUFFER, y
+    iny
+    iny
+    iny
+    iny
+    bne @start_ff_fill_loop
+    @after_ff_fill_loop:
+
+    dec frame_done ; Set to 255
+    rti
+
+build_sprite:
     @start_build_sprite_loop:
     lda object_ids, x
     bne :+
@@ -470,7 +510,7 @@ game_logic:
     clc
     adc oam_offset
     bcc :+
-    jmp @after_finish_build_sprites ; Don't try to do more than 64 sprites
+    rts ; Don't try to do more than 64 sprites
     :
     iny
     lda (scratch), y
@@ -611,33 +651,8 @@ game_logic:
     :
     ldx scratch + 5
     @end_build_sprite_loop:
-    txa
-    clc
-    adc #$07
-    and #$0F
-    cmp scratch + 3
-    beq :+
-    tax
-    jmp @start_build_sprite_loop ; Loop until we reach the one we started on
-    :
-    @after_finish_build_sprites:
-    ldy oam_offset
-    bne :+
-    lda scratch + 2
-    bne @after_ff_fill_loop
-    :
-    lda #$FF
-    @start_ff_fill_loop:
-    sta OAMBUFFER, y
-    iny
-    iny
-    iny
-    iny
-    bne @start_ff_fill_loop
-    @after_ff_fill_loop:
-
-    dec frame_done ; Set to 255
-    rti
+    rts
+    
 
 dynamic_jump:
     jmp (scratch)
