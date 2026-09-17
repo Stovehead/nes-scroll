@@ -1089,7 +1089,7 @@ spawn_objects_after_scroll:
     sta scratch
     lda current_page
     sbc scratch + 1
-    bmi @is_off_screen_left
+    bne @is_off_screen_left
     lda scratch
     cmp #64
     bcc @is_on_screen_left
@@ -2777,16 +2777,8 @@ Level0ObjectList:
     .byte $01, $04, $50, $20
     .byte $00, $00, $00, $00 ; Terminator
 Level1ObjectList:
-    .byte $01, $00, $20, $20 ; ID, Page, X Position, Y Position
-    .byte $01, $00, $80, $20
-    .byte $01, $00, $F0, $40
-    .byte $01, $01, $60, $60
-    .byte $01, $02, $10, $20
-    .byte $01, $02, $80, $20
-    .byte $01, $03, $20, $20
-    .byte $01, $03, $40, $20
-    .byte $01, $03, $B0, $20
-    .byte $01, $04, $50, $20
+    .byte $01, $00, $F0, $08 ; ID, Page, X Position, Y Position
+    .byte $01, $00, $F0, $48
     .byte $00, $00, $00, $00 ; Terminator
 
 .align 256
