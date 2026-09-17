@@ -65,6 +65,10 @@ LIGHTS_OFF = %00000001
     collision_buffer: .res 12
     collision_wrap_flag: .res 1
     level_flags: .res 1
+    left_object_pointer: .res 2
+    left_object_index: .res 1
+    right_object_pointer: .res 2
+    right_object_index: .res 1
 
 .bss
     object_ids: .res $10
@@ -214,7 +218,7 @@ main:
 
     lda #$02
     ldx #$00
-    jsr spawn_object
+    jsr spawn_object_without_spawn_flag
 
     dec frame_done
 
@@ -426,6 +430,7 @@ game_logic:
     bcc @start_step_code_loop
 
     jsr handle_scroll
+    jsr spawn_objects_after_scroll
 
     ; Build sprites
     lda #$00
@@ -637,8 +642,10 @@ game_logic:
 dynamic_jump:
     jmp (scratch)
 
-; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11
+; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12
 handle_scroll:
+    lda #$FF
+    sta scratch + 12 ; It will stay this value if we didn't scroll
     lda object_ids ; Check if slot 0 is the player
     cmp #$02
     beq :+
@@ -694,7 +701,7 @@ handle_scroll:
     rts ; No scroll
     @scroll_left:
     lda #$00
-    sta scratch + 4 ; Store that we're scrolling left
+    sta scratch + 12 ; Store that we're scrolling left
     lda scratch + 8
     sec
     sbc x_scroll
@@ -713,7 +720,7 @@ handle_scroll:
     jmp @not_pressing_left
     @scroll_right:
     lda #$01
-    sta scratch + 4 ; Store that we're scrolling right
+    sta scratch + 12 ; Store that we're scrolling right
     lda current_page ; Check if we're already at the end
     dec scratch + 2
     cmp scratch + 2
@@ -756,7 +763,7 @@ handle_scroll:
     bne @load_column
     rts ; Return early if not
     @load_column:
-    ldy scratch + 4
+    ldy scratch + 12
     beq @will_scroll_left
     inx
     clc
@@ -999,6 +1006,75 @@ load_column_3:
     sta $0100, y
     rts
 
+; Scroll direction in $12
+spawn_objects_after_scroll:
+    lda scratch + 12
+    bpl :+
+    rts ; If the scroll direction is $FF, no scrolling occured
+    :
+    beq @scrolled_left
+    ldy #$00
+    lda (right_object_pointer), y
+    bne :+
+    jmp @update_left_pointer ; Return early if we're at the terminator
+    :
+    sta scratch + 4 ; Store object ID
+    iny
+    lda (right_object_pointer), y ; Load page number
+    sta scratch + 1
+    iny
+    lda (right_object_pointer), y ; Load X position
+    sta scratch
+    lda x_scroll
+    sec
+    sbc scratch
+    sta scratch
+    lda current_page
+    sbc scratch + 1
+    cmp #$FE
+    bcc @is_off_screen
+    bne @is_on_screen
+    lda scratch
+    cmp #256 - 64
+    bcs @is_on_screen
+    @is_off_screen:
+    jmp @update_left_pointer
+    @is_on_screen:
+    lda scratch + 4
+    ldy right_object_pointer
+    jsr try_spawn_object
+    cpx #$FF
+    beq @increment_right_pointer
+    lda #$00
+    sta object_y_page_subpixels, x
+    ldy #$01
+    lda (right_object_pointer), y
+    asl
+    asl
+    asl
+    sta object_x_page_subpixels, x
+    iny
+    lda (right_object_pointer), y
+    sta object_x_positions, x
+    iny
+    lda (right_object_pointer), y
+    sta object_y_positions, x
+    @increment_right_pointer:
+    lda right_object_pointer
+    clc
+    adc #$04
+    sta right_object_pointer
+    lda right_object_pointer + 1
+    adc #$00
+    sta right_object_pointer + 1
+    inc right_object_index
+    
+
+
+    
+    @scrolled_left:
+    @update_left_pointer:
+    rts
 
 ; Clobbers A
 read_controllers:
@@ -1313,6 +1389,66 @@ load_level:
     sta object_spawned_flags, x
     sta object_dead_flags, x
     bne :-
+    sta left_object_index
+    sta right_object_index
+
+    ldx current_level ; Load objects near the beginning
+    lda LevelObjectListPointersLow, x
+    sta left_object_pointer
+    sta right_object_pointer
+    lda LevelObjectListPointersHigh, x
+    sta left_object_pointer + 1
+    sta right_object_pointer + 1
+    
+    @start_object_load_loop:
+    ldy #$00
+    lda (right_object_pointer), y
+    beq @after_load_objects_loop ; End if we find the terminator
+    sta scratch + 2; Store object index
+    iny
+    lda (right_object_pointer), y
+    cmp #$02
+    bcs @after_load_objects_loop ; Stop once we get objects that are too far to the right
+    iny
+    sta scratch + 3
+    cmp #$01
+    beq @object_on_second_page
+    lda (right_object_pointer), y
+    jmp @load_object_y_position
+    @object_on_second_page:
+    lda (right_object_pointer), y
+    cmp #64
+    bcs @after_load_objects_loop
+    @load_object_y_position:
+    sta scratch + 4
+    iny
+    lda (right_object_pointer), y
+    sta scratch + 5
+    ldy right_object_index
+    lda scratch + 2
+    jsr try_spawn_object
+    ; It can be presumed that this will never fail since the slots should be empty
+    ; If it does fail, then we will corrupt memory here
+    lda scratch + 3
+    asl
+    asl
+    asl
+    sta object_x_page_subpixels, x
+    lda scratch + 4
+    sta object_x_positions, x
+    lda scratch + 5
+    sta object_y_positions, x
+    inc right_object_index
+    lda right_object_pointer
+    clc
+    adc #$04
+    sta right_object_pointer
+    lda right_object_pointer + 1
+    adc #$00
+    sta right_object_pointer + 1
+    jmp @start_object_load_loop
+
+    @after_load_objects_loop:
 
     lda #LEVEL_LOADED
     sta game_state
@@ -1467,19 +1603,50 @@ init_animation:
     sta object_current_metasprites, x
     rts
 
-; Object index in X, object ID in A
+; Object index in X, object ID in A, object level index in Y
+; Clobbers 0 and 1
 spawn_object:
     sta object_ids, x
+    sty scratch
+    stx scratch + 1
+    tya
+    lsr
+    lsr
+    lsr ; Divide by 8 to find byte index
+    tax
+    lda scratch
+    and #%00000111 ; Find position in byte
     tay
+    lda #$01
+    :
+    dey
+    bmi @after_get_bit_mask
+    asl
+    jmp :-
+    @after_get_bit_mask:
+    ora object_spawned_flags, x
+    sta object_spawned_flags, x
+    ldx scratch + 1
+    ldy object_ids, x
     lda ObjectInitPointersLow, y
     sta scratch
     lda ObjectInitPointersHigh, y
     sta scratch + 1
     jmp (scratch)
 
-; Object ID in A, object index in Y
+spawn_object_without_spawn_flag:
+    tay
+    sta object_ids, x
+    lda ObjectInitPointersLow, y
+    sta scratch
+    lda ObjectInitPointersHigh, y
+    sta scratch + 1
+    jmp (scratch)
+
+; Object ID in A, object level index in Y
 ; If successful, returns object index in X
 ; Else returns $FF in X
+; Clobbers 0 and 1
 try_spawn_object:
     pha
     ldx #$01
@@ -1497,6 +1664,60 @@ try_spawn_object:
     sta object_indices, x
     pla
     jmp spawn_object
+
+; Object index in X
+; Clobbers $15, A, Y
+despawn_object:
+    lda object_indices, x
+    stx scratch + 15
+    tay
+    lsr
+    lsr
+    lsr
+    tax
+    tya
+    and #%00000111
+    tay
+    lda #$01
+    :
+    dey
+    bmi @after_get_bit_mask
+    asl
+    jmp :-
+    @after_get_bit_mask:
+    eor #$FF
+    and object_spawned_flags, x
+    sta object_spawned_flags, x
+    ldx scratch + 15
+    rts
+
+kill_object:
+    lda object_indices, x
+    stx scratch + 15
+    tay
+    lsr
+    lsr
+    lsr
+    tax
+    tya
+    and #%00000111
+    tay
+    lda #$01
+    :
+    dey
+    bmi @after_get_bit_mask
+    asl
+    jmp :-
+    @after_get_bit_mask:
+    tay
+    ora object_dead_flags, x
+    sta object_dead_flags, x
+    tya
+    eor #$FF
+    and object_spawned_flags, x
+    sta object_spawned_flags, x
+    ldx scratch + 15
+    rts
 
 ; Object 1 in X
 load_object_collision:
@@ -1672,6 +1893,41 @@ test_object_collision:
     :
 
     lda #$01
+    rts
+
+; Object index in X
+; Clobbers 14, 15
+check_object_on_screen:
+    lda object_x_page_subpixels, x
+    lsr
+    lsr
+    lsr
+    sta scratch + 15
+    lda x_scroll
+    sec
+    sbc object_x_positions, x
+    sta scratch + 14
+    lda current_page
+    sbc scratch + 15
+    bmi @object_to_right
+    bne @is_off_screen
+    lda scratch + 14
+    cmp #64
+    bcs @is_off_screen
+    lda #$01
+    rts
+    @object_to_right:
+    cmp #$FE
+    bcc @is_off_screen
+    bne @is_on_screen
+    lda scratch + 14
+    cmp #256 - 64
+    bcc @is_off_screen
+    @is_on_screen:
+    lda #$01
+    rts
+    @is_off_screen:
+    lda #$00
     rts
 
 .include "light_switch.s"
@@ -2342,6 +2598,40 @@ Level1Tiles:
     .byte $0B, $0C, $0B, $0B, $0B, $0C, $0C, $0B
     .byte $0B, $0C, $0C, $0C, $0C, $0C, $0C, $0B
     .byte $0C, $0C, $0B, $0B, $0B, $0C, $0C, $0B
+
+.define LevelObjectListPointers \
+    Level0ObjectList, \
+    Level1ObjectList
+LevelObjectListPointersLow:
+    .lobytes LevelObjectListPointers
+LevelObjectListPointersHigh:
+    .hibytes LevelObjectListPointers
+
+    .byte $00, $00, $00, $00 ; Terminator
+Level0ObjectList:
+    .byte $01, $00, $20, $20 ; ID, Page, X Position, Y Position
+    .byte $01, $00, $80, $20
+    .byte $01, $00, $F0, $40
+    .byte $01, $01, $60, $60
+    .byte $01, $02, $10, $20
+    .byte $01, $02, $80, $20
+    .byte $01, $03, $20, $20
+    .byte $01, $03, $40, $20
+    .byte $01, $03, $B0, $20
+    .byte $01, $04, $50, $20
+    .byte $00, $00, $00, $00 ; Terminator
+Level1ObjectList:
+    .byte $01, $00, $20, $20 ; ID, Page, X Position, Y Position
+    .byte $01, $00, $80, $20
+    .byte $01, $00, $F0, $40
+    .byte $01, $01, $60, $60
+    .byte $01, $02, $10, $20
+    .byte $01, $02, $80, $20
+    .byte $01, $03, $20, $20
+    .byte $01, $03, $40, $20
+    .byte $01, $03, $B0, $20
+    .byte $01, $04, $50, $20
+    .byte $00, $00, $00, $00 ; Terminator
 
 .align 256
 

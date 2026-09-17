@@ -31,6 +31,11 @@ LightSwitchJumpTableHigh:
 
 ; Object index in X
 light_switch_step:
+    jsr check_object_on_screen
+    bne :+
+    sta object_ids, x
+    jmp despawn_object
+    :
     ldy light_switch_state, x
     lda LightSwitchJumpTableHigh, y
     pha
