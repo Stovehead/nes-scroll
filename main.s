@@ -1013,6 +1013,7 @@ spawn_objects_after_scroll:
     rts ; If the scroll direction is $FF, no scrolling occured
     :
     beq @scrolled_left
+    @scrolled_right:
     ldy #$00
     lda (right_object_pointer), y
     bne :+
@@ -1032,16 +1033,16 @@ spawn_objects_after_scroll:
     lda current_page
     sbc scratch + 1
     cmp #$FE
-    bcc @is_off_screen
-    bne @is_on_screen
+    bcc @is_off_screen_right
+    bne @is_on_screen_right
     lda scratch
     cmp #256 - 64
-    bcs @is_on_screen
-    @is_off_screen:
+    bcs @is_on_screen_right
+    @is_off_screen_right:
     jmp @update_left_pointer
-    @is_on_screen:
+    @is_on_screen_right:
     lda scratch + 4
-    ldy right_object_pointer
+    ldy right_object_index
     jsr try_spawn_object
     cpx #$FF
     beq @increment_right_pointer
@@ -1068,12 +1069,141 @@ spawn_objects_after_scroll:
     adc #$00
     sta right_object_pointer + 1
     inc right_object_index
-    
-
-
-    
+    jmp @scrolled_right
     @scrolled_left:
+    ldy #$00
+    lda (left_object_pointer), y
+    bne :+
+    jmp @update_right_pointer ; Return early if we're at the terminator
+    :
+    sta scratch + 4 ; Store object ID
+    iny
+    lda (left_object_pointer), y ; Load page number
+    sta scratch + 1
+    iny
+    lda (left_object_pointer), y ; Load X position
+    sta scratch
+    lda x_scroll
+    sec
+    sbc scratch
+    sta scratch
+    lda current_page
+    sbc scratch + 1
+    bmi @is_off_screen_left
+    lda scratch
+    cmp #64
+    bcc @is_on_screen_left
+    @is_off_screen_left:
+    jmp @update_right_pointer
+    @is_on_screen_left:
+    lda scratch + 4
+    ldy left_object_index
+    jsr try_spawn_object
+    cpx #$FF
+    beq @decrement_left_pointer
+    lda #$00
+    sta object_y_page_subpixels, x
+    ldy #$01
+    lda (left_object_pointer), y
+    asl
+    asl
+    asl
+    sta object_x_page_subpixels, x
+    iny
+    lda (left_object_pointer), y
+    sta object_x_positions, x
+    iny
+    lda (left_object_pointer), y
+    sta object_y_positions, x
+    @decrement_left_pointer:
+    lda left_object_pointer
+    sec
+    sbc #$04
+    sta left_object_pointer
+    lda left_object_pointer + 1
+    sbc #$00
+    sta left_object_pointer + 1
+    dec left_object_index
+    jmp @scrolled_left
     @update_left_pointer:
+    ldy #$04
+    lda (left_object_pointer), y
+    bne :+
+    rts
+    :
+    iny
+    lda (left_object_pointer), y ; Load page number
+    sta scratch + 1
+    iny
+    lda (left_object_pointer), y ; Load X position
+    sta scratch
+    lda x_scroll
+    sec
+    sbc scratch
+    sta scratch
+    lda current_page
+    sbc scratch + 1
+    bmi @is_on_screen_left_2
+    lda scratch
+    cmp #64
+    bcc @is_on_screen_left_2
+    @is_off_screen_left_2:
+    inc left_object_index
+    lda left_object_pointer
+    clc
+    adc #$04
+    sta left_object_pointer
+    lda left_object_pointer + 1
+    adc #$00
+    sta left_object_pointer + 1
+    jmp @update_left_pointer
+    @is_on_screen_left_2:
+    rts
+    @update_right_pointer:
+    lda x_scroll
+    clc
+    adc #64
+    sta scratch + 2
+    lda current_page
+    adc #$01
+    sta scratch + 3
+    @update_right_pointer_after_init:
+    dec right_object_index
+    ldy #$00
+    lda right_object_pointer
+    sec
+    sbc #$04
+    sta right_object_pointer
+    lda right_object_pointer + 1
+    sbc #$00
+    sta right_object_pointer + 1
+    lda (right_object_pointer), y
+    bne :+
+    rts
+    :
+    iny
+    lda (right_object_pointer), y ; Load page number
+    sta scratch + 1
+    iny
+    lda (right_object_pointer), y ; Load X position
+    sta scratch
+    lda scratch + 1
+    cmp scratch + 3
+    bcc @is_on_screen_right_2
+    lda scratch
+    cmp scratch + 2
+    bcc @is_on_screen_right_2
+    @is_off_screen_right_2:
+    jmp @update_right_pointer_after_init
+    @is_on_screen_right_2:
+    inc right_object_index
+    lda right_object_pointer
+    clc
+    adc #$04
+    sta right_object_pointer
+    lda right_object_pointer + 1
+    adc #$00
+    sta right_object_pointer + 1
     rts
 
 ; Clobbers A
@@ -1389,16 +1519,20 @@ load_level:
     sta object_spawned_flags, x
     sta object_dead_flags, x
     bne :-
-    sta left_object_index
     sta right_object_index
+    lda #$FF
+    sta left_object_index
 
     ldx current_level ; Load objects near the beginning
     lda LevelObjectListPointersLow, x
-    sta left_object_pointer
     sta right_object_pointer
+    sec
+    sbc #$04
+    sta left_object_pointer
     lda LevelObjectListPointersHigh, x
-    sta left_object_pointer + 1
     sta right_object_pointer + 1
+    sbc #$00
+    sta left_object_pointer + 1
     
     @start_object_load_loop:
     ldy #$00
@@ -1624,6 +1758,25 @@ spawn_object:
     asl
     jmp :-
     @after_get_bit_mask:
+    sta scratch
+    and object_spawned_flags, x
+    beq :+
+    lda #$00
+    ldx scratch + 1
+    sta object_ids, x
+    ldx #$FF
+    rts
+    :
+    lda scratch
+    and object_dead_flags, x
+    beq :+
+    lda #$00
+    ldx scratch + 1
+    sta object_ids, x
+    ldx #$FF
+    rts
+    :
+    lda scratch
     ora object_spawned_flags, x
     sta object_spawned_flags, x
     ldx scratch + 1
@@ -2614,6 +2767,9 @@ Level0ObjectList:
     .byte $01, $00, $F0, $40
     .byte $01, $01, $60, $60
     .byte $01, $02, $10, $20
+    .byte $01, $02, $10, $30
+    .byte $01, $02, $10, $40
+    .byte $01, $02, $10, $50
     .byte $01, $02, $80, $20
     .byte $01, $03, $20, $20
     .byte $01, $03, $40, $20
