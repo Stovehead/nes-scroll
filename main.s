@@ -1247,6 +1247,7 @@ read_controllers:
 
 ; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09
 load_level:
+    lda current_level
     cmp NumLevels
     bcc :+
     jmp reset ; Reset if we try to load an invalid level
