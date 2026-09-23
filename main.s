@@ -69,6 +69,8 @@ LIGHTS_OFF = %00000001
     left_object_index: .res 1
     right_object_pointer: .res 2
     right_object_index: .res 1
+    skip_light_switch_collision: .res 1
+    light_fade_timer: .res 1
 
 .bss
     object_ids: .res $10
@@ -377,14 +379,6 @@ game_logic:
     :
 
     lda buttons_pressed
-    and #BUTTON_START
-    beq :+
-    lda #$01
-    ldy #$00
-    jsr try_spawn_object
-    :
-
-    lda buttons_pressed
     and #BUTTON_DOWN
     beq :+
     dec brightness
@@ -428,6 +422,33 @@ game_logic:
     inx
     cpx #$10
     bcc @start_step_code_loop
+
+    lda #$00
+    sta skip_light_switch_collision
+
+    lda light_fade_timer ; Handle fading lights out
+    beq @after_handle_light_fade
+    sec
+    sbc #$01
+    bne @store_new_light_fade_timer
+    lda level_flags
+    and #LIGHTS_OFF
+    bne @lights_turning_off
+    inc brightness
+    beq @store_new_light_fade_timer
+    lda #LIGHT_SWITCH_FADE_LENGTH
+    jmp @store_new_light_fade_timer
+    @lights_turning_off:
+    lda #$00
+    ldx brightness
+    dex
+    stx brightness
+    cpx #$FF
+    bcc @store_new_light_fade_timer
+    lda #LIGHT_SWITCH_FADE_LENGTH
+    @store_new_light_fade_timer:
+    sta light_fade_timer
+    @after_handle_light_fade:
 
     jsr handle_scroll
     jsr spawn_objects_after_scroll
@@ -1258,6 +1279,10 @@ load_level:
     sta object_ids, x
     dex
     bne :-
+    sta level_flags
+    sta brightness
+    sta light_fade_timer
+    sta skip_light_switch_collision
     sta scratch + 9 ; Current column number
     sta scratch + 4
     sta current_page ; Reset scroll-related variables
@@ -2102,6 +2127,10 @@ check_object_on_screen:
 .include "light_switch.s"
 .include "player.s"
 
+NULL_OBJECT = 0
+LIGHT_SWITCH_OBJECT = 1
+PLAYER_OBJECT = 2
+
 NumObjects:
     .byte $03
 .define ObjectStepPointers \
@@ -2124,27 +2153,23 @@ ObjectInitPointersHigh:
 
 ObjectHitboxXOffsets:
     .byte $00 ; Null object
-    .byte $00 ; Test object
-    .byte $03 ; Player
     .byte $00 ; Light switch
+    .byte $03 ; Player
 
 ObjectHitboxYOffsets:
     .byte $00 ; Null object
-    .byte $00 ; Test object
-    .byte $02 ; Player
     .byte $00 ; Light switch
+    .byte $02 ; Player
 
 ObjectHitboxWidths:
     .byte $00 ; Null object
-    .byte $10 ; Test object
-    .byte 11 ; Player
     .byte $08 ; Light switch
+    .byte 10 ; Player
 
 ObjectHitboxHeights:
     .byte $00 ; Null object
-    .byte $20 ; Test object
-    .byte 11 ; Player
     .byte $10 ; Light switch
+    .byte 11 ; Player
 
 ; Sprite layout structure:
 ; 1 byte for the number of sprites, 1 byte for width in pixels, 1 byte for height in pixels
@@ -2381,13 +2406,13 @@ AnimPlayerJumpLengths:
     .byte $00
 
 AnimLightSwitchDownFrames:
-    .byte ANIM_LIGHT_SWITCH_DOWN_FRAME_0, $07, $08, $09, $0A
+    .byte ANIM_LIGHT_SWITCH_DOWN_FRAME_0, $07, $08, $09, ANIM_LIGHT_SWITCH_UP_FRAME_0
 
 AnimLightSwitchDownLengths:
     .byte $03, $03, $03, $03, $03
 
 AnimLightSwitchUpFrames:
-    .byte $0A, $09, $08, $07, $06
+    .byte ANIM_LIGHT_SWITCH_UP_FRAME_0, $09, $08, $07, $06
 
 AnimLightSwitchUpLengths:
     .byte $03, $03, $03, $03, $03
