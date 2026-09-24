@@ -3199,9 +3199,11 @@ Level0ObjectList:
     .byte $01, $04, $50, $20
     .byte $00, $00, $00, $00 ; Terminator
 Level1ObjectList:
-    .byte ELECTRIC_GATE_OBJECT, $00, $A0, $E0 ; ID, Page, X Position, Y Position
+    .byte ELECTRIC_GATE_OBJECT, $00, $C0, $E0 ; ID, Page, X Position, Y Position
     .byte LIGHT_SWITCH_OBJECT, $00, $F0, $08
     .byte LIGHT_SWITCH_OBJECT, $00, $F0, $48
+    .byte ELECTRIC_GATE_OBJECT, $01, $60, $30 ; ID, Page, X Position, Y Position
+    .byte LIGHT_SWITCH_OBJECT, $01, $84, $48
     .byte $00, $00, $00, $00 ; Terminator
 
 .align 256
