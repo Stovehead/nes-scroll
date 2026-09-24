@@ -454,7 +454,24 @@ game_logic:
     jsr spawn_objects_after_scroll
 
     ; Build sprites
-    lda #$00
+    lda #$10
+    sta OAMBUFFER
+    sta OAMBUFFER + 3
+    sta OAMBUFFER + 7
+    sta OAMBUFFER + 11
+    lda #$21
+    sta OAMBUFFER + 1
+    sta OAMBUFFER + 5
+    sta OAMBUFFER + 9
+    lda #$02
+    sta OAMBUFFER + 2
+    sta OAMBUFFER + 6
+    sta OAMBUFFER + 10
+    lda #$20
+    sta OAMBUFFER + 4
+    lda #$30
+    sta OAMBUFFER + 8
+    lda #12
     sta oam_offset ; Number of bytes in OAM we've used so far
     sta scratch + 2 ; Flag for if we've made any sprites
     ldx #$00
