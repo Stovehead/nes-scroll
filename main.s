@@ -2974,34 +2974,34 @@ Level1Tiles:
     .byte $0C, $0C, $0B, $10, $13, $16, $0C, $0C
     .byte $1C, $22, $0B, $12, $15, $18, $0B, $0B
     .byte $20, $20, $20, $20, $21, $0C, $0B, $1F
-    .byte $16, $0C, $0C, $0C, $0B, $0B, $0B, $10
-    .byte $18, $0B, $0B, $0B, $0C, $0B, $0B, $12
-    .byte $0B, $0C, $0B, $0C, $0B, $0B, $0B, $0B
-    .byte $0C, $0C, $0B, $0C, $0C, $0C, $0B, $0B
-    .byte $0C, $0B, $0B, $0C, $0C, $0C, $0B, $0C
+    .byte $16, $0C, $0C, $0C, $22, $0B, $0B, $10
+    .byte $18, $0C, $0D, $0C, $10, $16, $0B, $12
+    .byte $0B, $0C, $1E, $0B, $12, $18, $0B, $0B
+    .byte $13, $13, $16, $0C, $0C, $10, $13, $13
+    .byte $1A, $1A, $1B, $0C, $0C, $19, $1A, $1A
     .byte $0B, $0C, $0B, $0C, $0C, $0C, $0C, $0C
-    .byte $0C, $0C, $0C, $0B, $0B, $0C, $0B, $0C
-    .byte $0B, $0C, $0B, $0B, $0B, $0B, $0C, $0B
-    .byte $0C, $0C, $0B, $0C, $0C, $0B, $0B, $0B
-    .byte $0C, $0C, $0C, $0B, $0B, $0C, $0B, $0B
-    .byte $0B, $0C, $0B, $0B, $0B, $0B, $0B, $0B
-    .byte $0B, $0B, $0B, $0B, $0C, $0B, $0B, $0B
-    .byte $0B, $0B, $0B, $0B, $0B, $0B, $0B, $0B
-    .byte $0C, $0B, $0C, $0B, $0C, $0B, $0C, $0B
-    .byte $0B, $0C, $0B, $0C, $0B, $0C, $0B, $0B
-    .byte $0B, $0C, $0C, $0C, $0C, $0B, $0C, $0B
-    .byte $0B, $0B, $0C, $0C, $0B, $0C, $0B, $0C
-    .byte $0B, $0C, $0C, $0B, $0C, $0B, $0C, $0C
-    .byte $0B, $0B, $0B, $0B, $0B, $0C, $0B, $0C
-    .byte $0C, $0B, $0C, $0C, $0C, $0C, $0C, $0C
-    .byte $0C, $0C, $0C, $0B, $0B, $0C, $0C, $0C
-    .byte $0B, $0B, $0C, $0C, $0B, $0C, $0B, $0B
-    .byte $0C, $0B, $0B, $0B, $0B, $0B, $0C, $0B
+    .byte $0C, $22, $0C, $0B, $0B, $22, $0B, $0C
+    .byte $0B, $0B, $0B, $0B, $0B, $0B, $0C, $0B
     .byte $0B, $0C, $0B, $0C, $0C, $0B, $0B, $0B
-    .byte $0C, $0B, $0C, $0C, $0B, $0B, $0C, $0B
-    .byte $0C, $0C, $0C, $0B, $0B, $0C, $0B, $0B
-    .byte $0B, $0C, $0B, $0C, $0B, $0B, $0B, $0C
-    .byte $0C, $0C, $0B, $0B, $0B, $0B, $0C, $0C
+    .byte $22, $0C, $0C, $0B, $0B, $0B, $0B, $0B
+    .byte $0B, $0C, $0B, $0B, $0B, $0B, $0B, $0B
+    .byte $0B, $0B, $22, $0B, $0C, $22, $0B, $0B
+    .byte $13, $13, $16, $0B, $0B, $0D, $10, $13
+    .byte $15, $15, $18, $0B, $0C, $0E, $12, $15
+    .byte $0B, $0C, $0B, $0C, $0B, $0E, $0B, $0B
+    .byte $0D, $0C, $0C, $0C, $0C, $0F, $0C, $0B
+    .byte $0E, $0B, $0C, $0C, $0B, $0C, $0B, $0C
+    .byte $0E, $0C, $0C, $0B, $0C, $22, $0C, $0C
+    .byte $0E, $0B, $0B, $0B, $0B, $0C, $0B, $0C
+    .byte $1E, $0B, $0C, $0C, $22, $0C, $0C, $0C
+    .byte $16, $0C, $0C, $0B, $0B, $0C, $0C, $10
+    .byte $17, $0B, $0C, $0C, $0B, $0C, $0B, $11
+    .byte $18, $0B, $0B, $22, $0B, $0B, $0C, $12
+    .byte $0B, $0C, $25, $13, $13, $13, $13, $16
+    .byte $0C, $0B, $26, $15, $15, $15, $15, $18
+    .byte $16, $0C, $10, $13, $13, $13, $13, $13
+    .byte $18, $0B, $11, $14, $14, $14, $14, $14
+    .byte $18, $0C, $12, $15, $15, $15, $15, $15
     .byte $0C, $0B, $0C, $0C, $0B, $0C, $0B, $0B
     .byte $0B, $0B, $0B, $0B, $0B, $0C, $0B, $0C
     .byte $0B, $0B, $0B, $0B, $0B, $0B, $0C, $0C
@@ -3219,8 +3219,10 @@ Level1ObjectList:
     .byte ELECTRIC_GATE_OBJECT, $00, $C0, $E0 ; ID, Page, X Position, Y Position
     .byte LIGHT_SWITCH_OBJECT, $00, $F0, $08
     .byte LIGHT_SWITCH_OBJECT, $00, $F0, $48
-    .byte ELECTRIC_GATE_OBJECT, $01, $60, $30 ; ID, Page, X Position, Y Position
+    .byte ELECTRIC_GATE_OBJECT, $01, $60, $30
     .byte LIGHT_SWITCH_OBJECT, $01, $84, $48
+    .byte LIGHT_SWITCH_OBJECT, $04, $84, $C8
+    .byte ELECTRIC_GATE_OBJECT, $05, $28, $B0
     .byte $00, $00, $00, $00 ; Terminator
 
 .align 256
