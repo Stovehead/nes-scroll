@@ -165,25 +165,25 @@ reset:
 
 main:
 @load_palettes:
-    lda #$22
+    lda #$32
     sta sprite_palettes
     lda #$12
     sta sprite_palettes + 1
     lda #$02
     sta sprite_palettes + 2
-    lda #$24
+    lda #$34
     sta sprite_palettes + 3
     lda #$14
     sta sprite_palettes + 4
     lda #$04
     sta sprite_palettes + 5
-    lda #$26
+    lda #$36
     sta sprite_palettes + 6
     lda #$16
     sta sprite_palettes + 7
     lda #$06
     sta sprite_palettes + 8
-    lda #$29
+    lda #$39
     sta sprite_palettes + 9
     lda #$19
     sta sprite_palettes + 10
