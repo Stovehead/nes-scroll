@@ -636,8 +636,11 @@ build_sprite:
     lda object_y_positions, x
     clc
     adc scratch + 9
-    bcc :+
-    jmp @end_single_sprite_loop ; Skip if this sprite ended up off screen
+    bcs :+
+    cmp #240
+    bcc :++
+    :
+    adc #15
     :
     cmp y_scroll
     bcs :+
@@ -1762,19 +1765,19 @@ play_animation:
 ; Object index in X, animation ID in y
 init_animation:
     lda AnimationFrameLengthPointersLow, y ; Set animation timer for new frame
-    sta scratch
+    sta scratch + 8
     lda AnimationFrameLengthPointersHigh, y
-    sta scratch + 1
+    sta scratch + 9
     lda AnimationFramePointersLow, y ; Set metasprite for new frame
-    sta scratch + 2
+    sta scratch + 10
     lda AnimationFramePointersHigh, y
-    sta scratch + 3
+    sta scratch + 11
     lda #$00
     tay
     sta object_animations_frames, x
-    lda (scratch), y
+    lda (scratch + 8), y
     sta object_animation_timers, x
-    lda (scratch + 2), y
+    lda (scratch + 10), y
     sta object_current_metasprites, x
     rts
 
@@ -2126,17 +2129,20 @@ check_object_on_screen:
 
 .include "light_switch.s"
 .include "player.s"
+.include "electric_gate.s"
 
 NULL_OBJECT = 0
 LIGHT_SWITCH_OBJECT = 1
 PLAYER_OBJECT = 2
+ELECTRIC_GATE_OBJECT = 3
 
 NumObjects:
-    .byte $03
+    .byte $04
 .define ObjectStepPointers \
     $0000, \
     light_switch_step, \
-    player_step
+    player_step, \
+    electric_gate_step
 ObjectStepPointersLow:
     .lobytes ObjectStepPointers
 ObjectStepPointersHigh:
@@ -2145,7 +2151,8 @@ ObjectStepPointersHigh:
 .define ObjectInitPointers \
     $0000, \
     light_switch_init, \
-    player_init
+    player_init, \
+    electric_gate_init
 ObjectInitPointersLow:
     .lobytes ObjectInitPointers
 ObjectInitPointersHigh:
@@ -2155,27 +2162,31 @@ ObjectHitboxXOffsets:
     .byte $00 ; Null object
     .byte $00 ; Light switch
     .byte $03 ; Player
+    .byte $03 ; Electric gate
 
 ObjectHitboxYOffsets:
     .byte $00 ; Null object
     .byte $00 ; Light switch
     .byte $02 ; Player
+    .byte $00 ; Electric gate
 
 ObjectHitboxWidths:
     .byte $00 ; Null object
     .byte $08 ; Light switch
     .byte 10 ; Player
+    .byte $08 ; Electric gate
 
 ObjectHitboxHeights:
     .byte $00 ; Null object
     .byte $10 ; Light switch
     .byte 11 ; Player
+    .byte 48 ; Electric gate
 
 ; Sprite layout structure:
 ; 1 byte for the number of sprites, 1 byte for width in pixels, 1 byte for height in pixels
 ; For each sprite, 1 byte for index, 1 byte for x offset, 1 byte for y offset, and 1 byte for attributes
 NumMetaSprites:
-    .byte $0B
+    .byte 20
 .define MetaSpritePointers \
     TestMetaSprite0, \
     TestMetaSprite1, \
@@ -2187,7 +2198,16 @@ NumMetaSprites:
     LightSwitchSprite1, \
     LightSwitchSprite2, \
     LightSwitchSprite3, \
-    LightSwitchSprite4
+    LightSwitchSprite4, \
+    ElectricGateOff, \
+    ElectricGateOn0, \
+    ElectricGateOn1, \
+    ElectricGateOn2, \
+    ElectricGateOn3, \
+    ElectricGateOn4, \
+    ElectricGateOn5, \
+    ElectricGateOn6, \
+    ElectricGateOn7
 MetaSpritePointersLow:
     .lobytes MetaSpritePointers
 MetaSpritePointersHigh:
@@ -2353,20 +2373,369 @@ LightSwitchSprite4:
     .byte $00       ; Y offset
     .byte %10000010 ; Attributes
 
+ElectricGateOff:
+    .byte $04 ; Num sprites
+    .byte $10 ; Width
+    .byte $30 ; Height
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+ElectricGateOn0:
+    .byte $07 ; Num sprites
+    .byte $10 ; Width
+    .byte $30 ; Height
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+ElectricGateOn1:
+    .byte $07 ; Num sprites
+    .byte $10 ; Width
+    .byte $30 ; Height
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+ElectricGateOn2:
+    .byte $07 ; Num sprites
+    .byte $10 ; Width
+    .byte $30 ; Height
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $20       ; Y offset
+    .byte %01000000 ; Attributes
+
+ElectricGateOn3:
+    .byte $07 ; Num sprites
+    .byte $10 ; Width
+    .byte $30 ; Height
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $20       ; Y offset
+    .byte %01000000 ; Attributes
+
+ElectricGateOn4:
+    .byte $07 ; Num sprites
+    .byte $10 ; Width
+    .byte $30 ; Height
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $20       ; Y offset
+    .byte %10000000 ; Attributes
+
+ElectricGateOn5:
+    .byte $07 ; Num sprites
+    .byte $10 ; Width
+    .byte $30 ; Height
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $20       ; Y offset
+    .byte %10000000 ; Attributes
+
+ElectricGateOn6:
+    .byte $07 ; Num sprites
+    .byte $10 ; Width
+    .byte $30 ; Height
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $20       ; Y offset
+    .byte %10000000 ; Attributes
+
+ElectricGateOn7:
+    .byte $07 ; Num sprites
+    .byte $10 ; Width
+    .byte $30 ; Height
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte (32)  ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $07       ; Index
+    .byte $00       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $09       ; Index
+    .byte $08       ; X offset
+    .byte $20       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $20       ; Y offset
+    .byte %11000000 ; Attributes
+
 ANIM_PLAYER_IDLE = 0
 ANIM_PLAYER_WALK = 1
 ANIM_PLAYER_JUMP = 2
 ANIM_LIGHT_SWITCH_DOWN = 3
 ANIM_LIGHT_SWITCH_UP = 4
+ANIM_ELECTRIC_GATE_OFF = 5
+ANIM_ELECTRIC_GATE_ON = 6
 
 NumAnimations:
-    .byte $05
+    .byte $07
 .define AnimationFramePointers \
     AnimPlayerIdleFrames, \
     AnimPlayerWalkFrames, \
     AnimPlayerJumpFrames, \
     AnimLightSwitchDownFrames, \
-    AnimLightSwitchUpFrames
+    AnimLightSwitchUpFrames, \
+    AnimElectricGateOffFrames, \
+    AnimElectricGateOnFrames
 AnimationFramePointersLow:
     .lobytes AnimationFramePointers
 AnimationFramePointersHigh:
@@ -2377,7 +2746,9 @@ AnimationFramePointersHigh:
     AnimPlayerWalkLengths, \
     AnimPlayerJumpLengths, \
     AnimLightSwitchDownLengths, \
-    AnimLightSwitchUpLengths
+    AnimLightSwitchUpLengths, \
+    AnimElectricGateOffLengths, \
+    AnimElectricGateOnLengths
 AnimationFrameLengthPointersLow:
     .lobytes AnimationFrameLengthPointers
 AnimationFrameLengthPointersHigh:
@@ -2385,7 +2756,7 @@ AnimationFrameLengthPointersHigh:
 
 ; Highest bit determines whether animation loops or not
 AnimationLengths:
-    .byte 1, 128 + 4, 1, 5, 5
+    .byte 1, 128 + 4, 1, 5, 5, 1, 128 + 8
 
 AnimPlayerIdleFrames:
     .byte ANIM_PLAYER_IDLE_FRAME
@@ -2416,6 +2787,18 @@ AnimLightSwitchUpFrames:
 
 AnimLightSwitchUpLengths:
     .byte $03, $03, $03, $03, $03
+
+AnimElectricGateOffFrames:
+    .byte $0B
+
+AnimElectricGateOffLengths:
+    .byte $00
+
+AnimElectricGateOnFrames:
+    .byte $0C, $0D, $0E, $0F, $10, $11, $12, $13
+
+AnimElectricGateOnLengths:
+    .byte $02, $02, $02, $02, $02, $02, $02, $02
 
 MetaTilesTopLeft:
     .byte $00, $00, $0E, $14, $16, $00, $02, $07, $09, $42, $43, $00, $1F, $26, $28, $00, $34, $00, $3E, $00, $1B, $1D, $20, $25, $2E, $30, $31, $30, $2E, $3A, $3C, $3A, $44, $46, $54, $56, $48, $4A, $58, $5A, $63, $65, $64, $64, $6E, $70, $72, $74, $6E, $20, $78, $7A, $91, $6E, $83, $7F, $74, $6E, $20, $8A, $8B, $20, $8A, $6E, $20, $92, $94, $9A, $9C
@@ -2818,8 +3201,9 @@ Level0ObjectList:
     .byte $01, $04, $50, $20
     .byte $00, $00, $00, $00 ; Terminator
 Level1ObjectList:
-    .byte $01, $00, $F0, $08 ; ID, Page, X Position, Y Position
-    .byte $01, $00, $F0, $48
+    .byte ELECTRIC_GATE_OBJECT, $00, $A0, $E0 ; ID, Page, X Position, Y Position
+    .byte LIGHT_SWITCH_OBJECT, $00, $F0, $08
+    .byte LIGHT_SWITCH_OBJECT, $00, $F0, $48
     .byte $00, $00, $00, $00 ; Terminator
 
 .align 256
