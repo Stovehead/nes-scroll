@@ -559,7 +559,6 @@ build_sprite:
     stx scratch + 6 ; Store current sprite index
     ldx scratch + 5
     lda object_flags, x
-    eor scratch + 10
     and #OBJECT_FLIPPED_H
     beq :+
     lda scratch + 14
@@ -623,7 +622,6 @@ build_sprite:
     sta scratch + 8 ; Store sprite x offset
     lda scratch + 9
     lda object_flags, x
-    eor scratch + 10
     and #OBJECT_FLIPPED_V
     beq :+
     lda scratch + 15
@@ -2380,12 +2378,12 @@ ElectricGateOff:
 
     .byte $07       ; Index
     .byte $00       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $09       ; Index
     .byte $08       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $07       ; Index
@@ -2405,12 +2403,12 @@ ElectricGateOn0:
 
     .byte $07       ; Index
     .byte $00       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $09       ; Index
     .byte $08       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $07       ; Index
@@ -2424,17 +2422,17 @@ ElectricGateOn0:
     .byte %00000000 ; Attributes
 
     .byte $0B       ; Index
-    .byte $03       ; X offset
+    .byte $04       ; X offset
     .byte $00       ; Y offset
     .byte %00000000 ; Attributes
 
     .byte $0B       ; Index
-    .byte $03       ; X offset
+    .byte $04       ; X offset
     .byte $10       ; Y offset
     .byte %00000000 ; Attributes
 
     .byte $0B       ; Index
-    .byte $03       ; X offset
+    .byte $04       ; X offset
     .byte $20       ; Y offset
     .byte %00000000 ; Attributes
 
@@ -2445,12 +2443,12 @@ ElectricGateOn1:
 
     .byte $07       ; Index
     .byte $00       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $09       ; Index
     .byte $08       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $07       ; Index
@@ -2485,12 +2483,12 @@ ElectricGateOn2:
 
     .byte $07       ; Index
     .byte $00       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $09       ; Index
     .byte $08       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $07       ; Index
@@ -2504,17 +2502,17 @@ ElectricGateOn2:
     .byte %00000000 ; Attributes
 
     .byte $0B       ; Index
-    .byte $03       ; X offset
+    .byte $04       ; X offset
     .byte $00       ; Y offset
     .byte %01000000 ; Attributes
 
     .byte $0B       ; Index
-    .byte $03       ; X offset
+    .byte $04       ; X offset
     .byte $10       ; Y offset
     .byte %01000000 ; Attributes
 
     .byte $0B       ; Index
-    .byte $03       ; X offset
+    .byte $04       ; X offset
     .byte $20       ; Y offset
     .byte %01000000 ; Attributes
 
@@ -2525,12 +2523,12 @@ ElectricGateOn3:
 
     .byte $07       ; Index
     .byte $00       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $09       ; Index
     .byte $08       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $07       ; Index
@@ -2565,12 +2563,12 @@ ElectricGateOn4:
 
     .byte $07       ; Index
     .byte $00       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $09       ; Index
     .byte $08       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $07       ; Index
@@ -2584,17 +2582,17 @@ ElectricGateOn4:
     .byte %00000000 ; Attributes
 
     .byte $0B       ; Index
-    .byte $03       ; X offset
+    .byte $04       ; X offset
     .byte $00       ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $0B       ; Index
-    .byte $03       ; X offset
+    .byte $04       ; X offset
     .byte $10       ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $0B       ; Index
-    .byte $03       ; X offset
+    .byte $04       ; X offset
     .byte $20       ; Y offset
     .byte %10000000 ; Attributes
 
@@ -2605,12 +2603,12 @@ ElectricGateOn5:
 
     .byte $07       ; Index
     .byte $00       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $09       ; Index
     .byte $08       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $07       ; Index
@@ -2645,12 +2643,12 @@ ElectricGateOn6:
 
     .byte $07       ; Index
     .byte $00       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $09       ; Index
     .byte $08       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $07       ; Index
@@ -2664,17 +2662,17 @@ ElectricGateOn6:
     .byte %00000000 ; Attributes
 
     .byte $0B       ; Index
-    .byte $03       ; X offset
+    .byte $04       ; X offset
     .byte $00       ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $0B       ; Index
-    .byte $03       ; X offset
+    .byte $04       ; X offset
     .byte $10       ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $0B       ; Index
-    .byte $03       ; X offset
+    .byte $04       ; X offset
     .byte $20       ; Y offset
     .byte %10000000 ; Attributes
 
@@ -2685,12 +2683,12 @@ ElectricGateOn7:
 
     .byte $07       ; Index
     .byte $00       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $09       ; Index
     .byte $08       ; X offset
-    .byte (32)  ; Y offset
+    .byte (256 - 16)  ; Y offset
     .byte %10000000 ; Attributes
 
     .byte $07       ; Index
