@@ -3245,7 +3245,7 @@ Level1ObjectList:
     .byte LIGHT_SWITCH_OBJECT, $04, $84, $C8
     .byte ELECTRIC_GATE_OBJECT, $05, $28, $B0
     .byte ELECTRIC_GATE_OBJECT, $08, $28, $10
-    .byte LIGHT_SWITCH_OBJECT, $08, $54, $E8
+    .byte LIGHT_SWITCH_OBJECT, $08, $54, $D0
     .byte $00, $00, $00, $00 ; Terminator
 
 .align 256
