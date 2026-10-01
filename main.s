@@ -8,8 +8,23 @@ OAMDATA = $2004
 PPUSCROLL = $2005
 PPUADDR = $2006
 PPUDATA = $2007
+PULSE1DUTY = $4000
+PULSE1SWEEP = $4001
+PULSE1TIMER = $4002
+PULSE1LENGTH = $4003
+PULSE2DUTY = $4004
+PULSE2SWEEP = $4005
+PULSE2TIMER = $4006
+PULSE2LENGTH = $4007
+TRIANGLELINEAR = $4008
+TRIANGLETIMER = $400A
+TRIANGLELENGTH = $400B
+NOISEVOLUME = $400C
+NOISEPERIOD = $400E
+NOISELENGTH = $400F
 APUDMC = $4010
 OAMDMA = $4014
+APUSTATUS = $4015
 JOY1 = $4016
 JOY2 = $4017
 APUFRAMECOUNTER = $4017
@@ -72,6 +87,7 @@ LIGHTS_OFF = %00000001
     right_object_index: .res 1
     skip_light_switch_collision: .res 1
     light_fade_timer: .res 1
+    seed: .res 2
 
 .bss
     object_ids: .res $10
@@ -229,8 +245,38 @@ main:
     sta current_ppu_ctrl
     sta PPUCTRL
 
+    jsr init_apu
+
 forever:
     jmp forever
+
+rand:
+    lda seed+1
+	tay ; store copy of high byte
+	; compute seed+1 ($39>>1 = %11100)
+	lsr ; shift to consume zeroes on left...
+	lsr
+	lsr
+	sta seed+1 ; now recreate the remaining bits in reverse order... %111
+	lsr
+	eor seed+1
+	lsr
+	eor seed+1
+	eor seed+0 ; recombine with original low byte
+	sta seed+1
+	; compute seed+0 ($39 = %111001)
+	tya ; original high byte
+	sta seed+0
+	asl
+	eor seed+0
+	asl
+	eor seed+0
+	asl
+	asl
+	asl
+	eor seed+0
+	sta seed+0
+	rts
 
 nmi:
     pha ; Save A register
@@ -701,7 +747,31 @@ build_sprite:
     ldx scratch + 5
     @end_build_sprite_loop:
     rts
-    
+
+init_apu:
+    lda #$08
+    sta PULSE1SWEEP
+    sta PULSE2SWEEP
+    lda #$80
+    sta TRIANGLELINEAR
+    lda #$30
+    sta PULSE1DUTY
+    sta PULSE2DUTY
+    sta NOISEVOLUME
+    lda #$00
+    sta PULSE1TIMER
+    sta PULSE1LENGTH
+    sta PULSE2TIMER
+    sta PULSE2LENGTH
+    sta TRIANGLETIMER
+    sta TRIANGLELENGTH
+    sta NOISEPERIOD
+    sta NOISELENGTH
+    lda #$0F
+    sta APUSTATUS
+    lda #$40
+    sta APUFRAMECOUNTER
+    rts
 
 dynamic_jump:
     jmp (scratch)
