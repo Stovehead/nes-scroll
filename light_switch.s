@@ -24,7 +24,7 @@ light_switch_state = object_variables_0
 light_switch_collision_last_frame = object_variables_1
 LIGHT_SWITCH_STILL = 0
 LIGHT_SWITCH_MOVING = 1
-LIGHT_SWITCH_FADE_LENGTH = 6
+LIGHT_SWITCH_FADE_LENGTH = 2
 
 ; Object index in X
 light_switch_step:

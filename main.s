@@ -343,6 +343,21 @@ nmi:
     lda #<Colors
     sta scratch
     lda brightness
+    clc
+    adc #$01
+    ror
+    bcs @no_emphasis
+    tay
+    lda current_ppu_mask
+    ora #%11100000
+    jmp @after_emphasis
+    @no_emphasis:
+    tay
+    lda current_ppu_mask
+    and #%00011111
+    @after_emphasis:
+    sta current_ppu_mask
+    tya
     asl
     asl
     asl
@@ -499,7 +514,7 @@ game_logic:
     ldx brightness
     dex
     stx brightness
-    cpx #$FF
+    cpx #$FC
     bcc @store_new_light_fade_timer
     lda #LIGHT_SWITCH_FADE_LENGTH
     @store_new_light_fade_timer:
