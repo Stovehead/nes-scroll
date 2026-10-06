@@ -122,7 +122,7 @@ LIGHTS_OFF = %00000001
 .segment "VECTORS"
     .addr nmi
     .addr reset
-    .addr 0
+    .addr crash_handler
 
 .segment "STARTUP"
 
@@ -1384,7 +1384,7 @@ load_level:
     lda current_level
     cmp NumLevels
     bcc :+
-    jmp reset ; Reset if we try to load an invalid level
+    brk ; Go to crash handler if we try to load an invalid level
     :
     lda #$00
     ldx #$0F
@@ -2247,6 +2247,151 @@ check_object_on_screen:
     @is_off_screen:
     lda #$00
     rts
+
+crash_handler:
+    lda #%00011000 ; Disable NMI
+    sta PPUCTRL
+    lda #%00000110
+    sta PPUMASK ; Disable rendering
+    jsr init_apu
+
+    ldx #$00 ; Clear OAM
+    lda #$FF
+    :
+    sta OAMBUFFER, x
+    inx
+    bne :-
+
+    lda #$00
+    sta OAMADDR
+
+    lda PPUSTATUS ; Clear VRAM
+    lda #$20
+    sta PPUADDR
+    lda #$00
+    sta PPUADDR
+    lda #$06
+    ldy #$08
+    :
+    ldx #$00
+    :
+    sta PPUDATA
+    dex
+    bne :-
+    dey
+    bne :--
+
+    lda #$23
+    sta PPUADDR
+    lda #$C0
+    sta PPUADDR
+    lda #$00
+    ldx #$40
+    :
+    sta PPUDATA
+    dex
+    bne :-
+
+    lda #$20
+    sta PPUADDR
+    lda #$82
+    sta PPUADDR
+    ldx #$00
+    clc
+    :
+    lda CrashMessage, x
+    beq :+
+    sta PPUDATA
+    inx
+    jmp :-
+    :
+    lda #$20
+    sta PPUADDR
+    lda #$A2
+    sta PPUADDR
+    inx
+    :
+    lda CrashMessage, x
+    beq :+
+    sta PPUDATA
+    inx
+    jmp :-
+    :
+    lda #$20
+    sta PPUADDR
+    lda #$E2
+    sta PPUADDR
+    inx
+    :
+    lda CrashMessage, x
+    beq :+
+    sta PPUDATA
+    inx
+    jmp :-
+    :
+
+    lda #$21
+    sta PPUADDR
+    lda #$22
+    sta PPUADDR
+    ldx #$00
+    @dump_stack_new_line:
+    ldy #14
+    @dump_stack:
+    lda $100, x
+    sta scratch
+    lsr
+    lsr
+    lsr
+    lsr
+    clc
+    adc #$DC
+    sta PPUDATA
+    lda scratch
+    and #$0F
+    adc #$DC
+    sta PPUDATA
+    inx
+    beq @after_stack_dump
+    dey
+    bne @dump_stack
+    lda #$06
+    sta PPUDATA
+    sta PPUDATA
+    sta PPUDATA
+    sta PPUDATA
+    jmp @dump_stack_new_line
+    @after_stack_dump:
+
+    :
+    bit PPUSTATUS ; Wait until v-blank
+    bpl :-
+
+    lda #$02
+    sta OAMDMA
+
+    lda #$3F ; Reset palettes
+    sta PPUADDR
+    lda #$01
+    sta PPUADDR
+    lda #$20
+    sta PPUDATA
+    lda #$0F
+    ldx #30
+    :
+    sta PPUDATA
+    dex
+    bne :-
+    
+    lda #$00
+    sta PPUSCROLL
+    sta PPUSCROLL
+
+    lda #%00011000
+    sta PPUCTRL
+    lda #%00011110
+    sta PPUMASK
+    jmp forever
 
 .include "light_switch.s"
 .include "player.s"
@@ -3348,6 +3493,18 @@ Colors:
     .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
     .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
     .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
+
+.macro asciizoffset Str, Off
+   .repeat .strlen(Str), I
+      .byte .strat(Str, I) + Off
+   .endrep
+   .byte 0
+.endmacro
+
+CrashMessage:
+    asciizoffset "A FATAL ERROR HAS OCCURED", $A5
+    asciizoffset "PLEASE REPORT THIS ISSUE", $A5
+    asciizoffset "STACK DUMP", $A5
 
 .segment "CHARS"
     .incbin "bg.bin"
