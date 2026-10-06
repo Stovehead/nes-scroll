@@ -3502,7 +3502,7 @@ Colors:
 .endmacro
 
 CrashMessage:
-    asciizoffset "A FATAL ERROR HAS OCCURED", $A5
+    asciizoffset "A FATAL ERROR HAS OCCURRED", $A5
     asciizoffset "PLEASE REPORT THIS ISSUE", $A5
     asciizoffset "STACK DUMP", $A5
 
