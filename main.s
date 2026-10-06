@@ -28,6 +28,8 @@ APUSTATUS = $4015
 JOY1 = $4016
 JOY2 = $4017
 APUFRAMECOUNTER = $4017
+JMP_OPCODE = $4C
+RTI_OPCODE = $40
 OAMBUFFER = $0200
 BUTTON_A =      %10000000
 BUTTON_B =      %01000000
@@ -88,6 +90,7 @@ LIGHTS_OFF = %00000001
     skip_light_switch_collision: .res 1
     light_fade_timer: .res 1
     seed: .res 2
+    nmi_jump: .res 3
 
 .bss
     object_ids: .res $10
@@ -120,13 +123,24 @@ LIGHTS_OFF = %00000001
     .byte $01, $00              ; mapper 0, vertical mirroring
 
 .segment "VECTORS"
-    .addr nmi
+    .addr nmi_jump
     .addr reset
     .addr crash_handler
 
 .segment "STARTUP"
 
 .segment "CODE"
+
+.macro update_nmi NewAddr
+    lda #RTI_OPCODE
+    sta nmi_jump ; Replace JMP with RTI in case NMI interrupts this
+    lda #<NewAddr
+    sta nmi_jump + 1
+    lda #>NewAddr
+    sta nmi_jump + 2
+    lda #JMP_OPCODE
+    sta nmi_jump
+.endmacro
 
 reset:
     sei        ; ignore IRQs
@@ -239,13 +253,13 @@ main:
     ldx #$00
     jsr spawn_object_without_spawn_flag
 
-    dec frame_done
+    jsr init_apu
+
+    update_nmi load_level
 
     lda #%10100000	; Enable NMI and set sprite size
     sta current_ppu_ctrl
     sta PPUCTRL
-
-    jsr init_apu
 
 forever:
     jmp forever
@@ -278,7 +292,7 @@ rand:
 	sta seed+0
 	rts
 
-nmi:
+normal_nmi:
     pha ; Save A register
     lda frame_done
     bne @after_early_return
@@ -287,22 +301,6 @@ nmi:
 @after_early_return:
 
 @vblank_routine:
-    lda game_state ; Check if we load level
-    bne :+
-    jmp load_level
-    :
-    cmp #LEVEL_LOADED
-    bne :+
-    lda #LEVEL_READY
-    sta game_state
-    jmp :++
-    :
-    cmp #LEVEL_READY
-    bne :+
-    lda current_ppu_mask
-    ora #%00011000 ; Turn rendering back on at next NMI
-    sta current_ppu_mask
-    :
     inc frame_done ; Set back to 0
     pla ; Restore A register, not really needed
     lda #$02 ; Push sprites to OAM
@@ -434,10 +432,7 @@ game_logic:
     lda #$00
     :
     sta current_level
-    lda #$00
-    sta game_state
-    dec frame_done
-    jmp nmi
+    jmp load_level
     :
 
     lda buttons_pressed
@@ -1738,15 +1733,16 @@ load_level:
 
     @after_load_objects_loop:
 
-    lda #LEVEL_LOADED
-    sta game_state
+    update_nmi normal_nmi
+    lda current_ppu_mask
+    ora #%00011000 ; Turn rendering back on at next NMI
+    sta current_ppu_mask
     lda PPUSTATUS
     lda current_ppu_ctrl
     ora #%10000000 ; Turn NMI back on
     sta current_ppu_ctrl
     sta PPUCTRL
-    pla
-    rti
+    jmp game_logic
 
 ; Page in 10, X position in 11, Y position in 12
 ; Clobbers A, X, Y, 9, 13, 14, 15
@@ -2249,11 +2245,25 @@ check_object_on_screen:
     rts
 
 crash_handler:
+    sta scratch + 1
     lda #%00011000 ; Disable NMI
     sta PPUCTRL
     lda #%00000110
     sta PPUMASK ; Disable rendering
-    jsr init_apu
+    stx scratch + 2
+    sty scratch + 3
+    tsx
+    stx scratch + 4
+    dex
+    txs
+    pla
+    php
+    tay
+    pla
+    sta scratch + 5
+    tya
+    inx
+    sta $100, x
 
     ldx #$00 ; Clear OAM
     lda #$FF
@@ -2317,9 +2327,9 @@ crash_handler:
     inx
     jmp :-
     :
-    lda #$20
+    lda #$21
     sta PPUADDR
-    lda #$E2
+    lda #$02
     sta PPUADDR
     inx
     :
@@ -2363,6 +2373,47 @@ crash_handler:
     jmp @dump_stack_new_line
     @after_stack_dump:
 
+    jsr init_apu
+
+    lda #$20
+    sta PPUADDR
+    lda #$C2
+    sta PPUADDR
+    lda #$E6
+    sta PPUDATA
+    ldy #$06
+    sty PPUDATA
+    lda scratch + 1
+    jsr print_hex
+    sty PPUDATA
+    sty PPUDATA
+    lda #$FD
+    sta PPUDATA
+    sty PPUDATA
+    lda scratch + 2
+    jsr print_hex
+    sty PPUDATA
+    sty PPUDATA
+    lda #$FE
+    sta PPUDATA
+    sty PPUDATA
+    lda scratch + 3
+    jsr print_hex
+    sty PPUDATA
+    sty PPUDATA
+    lda #$F8
+    sta PPUDATA
+    sty PPUDATA
+    lda scratch + 4
+    jsr print_hex
+    sty PPUDATA
+    sty PPUDATA
+    lda #$F5
+    sta PPUDATA
+    sty PPUDATA
+    lda scratch + 5
+    jsr print_hex
+
     :
     bit PPUSTATUS ; Wait until v-blank
     bpl :-
@@ -2392,6 +2443,21 @@ crash_handler:
     lda #%00011110
     sta PPUMASK
     jmp forever
+
+print_hex:
+    sta scratch
+    lsr
+    lsr
+    lsr
+    lsr
+    clc
+    adc #$DC
+    sta PPUDATA
+    lda scratch
+    and #$0F
+    adc #$DC
+    sta PPUDATA
+    rts
 
 .include "light_switch.s"
 .include "player.s"
