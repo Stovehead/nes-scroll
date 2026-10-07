@@ -1,0 +1,2 @@
+NumSongs:
+    .byte $01

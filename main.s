@@ -809,8 +809,7 @@ wipe_nmi:
     sta PPUMASK
     lda #%10100001
     sta PPUCTRL
-    @waste_time:
-    ldy #$12
+    ldy #$0E
     :
     dey
     bne :-
@@ -832,10 +831,10 @@ wipe_nmi:
     sta NOISEVOLUME
     rti
     :
-    lda #%00011110
-    sta PPUMASK
     lda #%10100000
     sta PPUCTRL
+    lda #%00011110
+    sta PPUMASK
     @check_sprite_0:
     bit PPUSTATUS
     bvc @check_sprite_0
@@ -2371,6 +2370,7 @@ crash_handler:
     tya
     inx
     sta $100, x
+    sei
 
     ldx #$00 ; Clear OAM
     lda #$FF
