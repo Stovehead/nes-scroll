@@ -2512,7 +2512,7 @@ crash_handler:
     sty PPUDATA
     lda scratch + 5
     jsr print_hex
-
+    bit PPUSTATUS ; Clear v-blank flag
     :
     bit PPUSTATUS ; Wait until v-blank
     bpl :-
