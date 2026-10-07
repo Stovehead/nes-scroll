@@ -436,6 +436,34 @@ game_logic:
     :
 
     lda buttons_pressed
+    and #BUTTON_START
+    beq :++
+    lda current_level
+    clc
+    adc #$01
+    cmp NumLevels
+    bcc :+
+    lda #$00
+    :
+    sta current_level
+    lda #236
+    sta OAMBUFFER 
+    lda #$00
+    sta OAMBUFFER + 2
+    sta OAMBUFFER + 3
+    sta scratch + 1
+    lda #$01
+    sta OAMBUFFER + 1
+    lda #$04
+    sta scratch + 2
+    sta scratch + 3
+    lda #$0D
+    sta scratch
+    update_nmi wipe_nmi
+    rti
+    :
+
+    lda buttons_pressed
     and #BUTTON_DOWN
     beq :+
     dec brightness
@@ -757,6 +785,85 @@ build_sprite:
     ldx scratch + 5
     @end_build_sprite_loop:
     rts
+
+.macro burn_12_and_two_thirds_cycles
+.scope
+        clc
+        lda scratch + 1
+        adc #170
+        sta scratch + 1
+        bcs continue
+continue:
+.endscope
+.endmacro
+
+wipe_nmi:
+    lda #$02 ; Push sprites to OAM
+    sta OAMDMA
+    @do_wipe:
+    inc scratch
+    inc scratch
+    inc scratch
+    inc scratch
+    lda #%00001110
+    sta PPUMASK
+    lda #%10100001
+    sta PPUCTRL
+    @waste_time:
+    ldy #$12
+    :
+    dey
+    bne :-
+    ldx scratch
+    :
+    ldy #$13
+    :
+    dey
+    bne :-
+    burn_12_and_two_thirds_cycles
+    dex
+    bne :--
+    lda scratch
+    cmp #$86
+    bcc :+
+    lda #$01
+    sta PPUCTRL
+    lda #%00010000
+    sta NOISEVOLUME
+    rti
+    :
+    lda #%00011110
+    sta PPUMASK
+    lda #%10100000
+    sta PPUCTRL
+    @check_sprite_0:
+    bit PPUSTATUS
+    bvc @check_sprite_0
+    lda #%10100001
+    sta PPUCTRL
+    ldy #$10
+    :
+    dey
+    bne :-
+    lda #%00001110
+    sta PPUMASK
+    dec OAMBUFFER
+    dec OAMBUFFER
+    dec OAMBUFFER
+    dec OAMBUFFER
+    lda #%00011111
+    sta NOISEVOLUME
+    lda scratch + 2
+    clc
+    adc #$60
+    sta scratch + 2
+    lda scratch + 3
+    adc #$00
+    sta scratch + 3
+    sta NOISEPERIOD
+    lda scratch + 2
+    sta NOISELENGTH
+	rti
 
 init_apu:
     lda #$08
