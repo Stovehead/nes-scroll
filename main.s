@@ -437,15 +437,7 @@ game_logic:
 
     lda buttons_pressed
     and #BUTTON_START
-    beq :++
-    lda current_level
-    clc
-    adc #$01
-    cmp NumLevels
-    bcc :+
-    lda #$00
-    :
-    sta current_level
+    beq :+
     lda #236
     sta OAMBUFFER 
     lda #$00
@@ -825,10 +817,10 @@ wipe_nmi:
     lda scratch
     cmp #$86
     bcc :+
-    lda #$01
-    sta PPUCTRL
+    update_nmi normal_nmi
     lda #%00010000
     sta NOISEVOLUME
+    dec frame_done
     rti
     :
     lda #%10100000
