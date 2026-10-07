@@ -2403,7 +2403,7 @@ crash_handler:
 
     lda #$20
     sta PPUADDR
-    lda #$82
+    lda #$62
     sta PPUADDR
     ldx #$00
     clc
@@ -2416,7 +2416,7 @@ crash_handler:
     :
     lda #$20
     sta PPUADDR
-    lda #$A2
+    lda #$82
     sta PPUADDR
     inx
     :
