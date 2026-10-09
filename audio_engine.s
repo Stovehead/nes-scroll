@@ -314,14 +314,12 @@ handle_triangle:
     sty audio_engine_scratch
     tay
     lda PeriodTableHigh, y
-    lsr
     cmp triangle_period_high_byte
     beq :+
     sta TRIANGLELENGTH
     :
     sta triangle_period_high_byte
     lda PeriodTableLow, y
-    ror
     sta TRIANGLETIMER
     ldy audio_engine_scratch
     lda audio_engine_scratch + 1
