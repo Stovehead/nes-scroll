@@ -26,7 +26,7 @@ APUFRAMECOUNTER = $4017
     triangle_music_addr: .res 2
     noise_sfx_addr: .res 2
     noise_music_addr: .res 2
-    audio_engine_scratch: .res 1
+    audio_engine_scratch: .res 2
 .popseg
 
 .pushseg
@@ -64,6 +64,7 @@ APUFRAMECOUNTER = $4017
     triangle_music_timer: .res 1
     noise_sfx_timer: .res 1
     noise_music_timer: .res 1
+    resume_play_flag: .res 1
 .popseg
 
 CHANNEL_MUTED = %00010000
@@ -108,6 +109,13 @@ init_apu:
     sta APUFRAMECOUNTER
     rts
 
+.macro increment_channel_pointer
+    inc channel_addr, x
+    bne :+
+        inc channel_addr+1, x
+    :
+.endmacro
+
 update_audio:
     lda audio_update_flag
     beq :+
@@ -119,21 +127,10 @@ update_audio:
 after_process_channel:
     tya
     lsr
-    beq :+
+    bcc play_channel
     lda channel_volume - 1, y
     and #CHANNEL_DISABLED | CHANNEL_MUTED
     beq after_play_channel ; Skip playing music channel if a sound effect is playing
-    :
-    lda channel_volume, y
-    and #CHANNEL_MUTED
-    bne silence_channel
-    lda channel_timer, y
-    cmp channel_separation, y
-    bcs play_channel
-silence_channel:
-    lda channel_volume, y
-    and #%11110000
-    sta channel_volume, y
 play_channel:
     sty audio_engine_scratch
     tya
@@ -144,6 +141,22 @@ play_channel:
     lda ChannelHandlerJumpTableLow, y
     pha
     ldy audio_engine_scratch
+    tya
+    lsr
+    bcc :+
+    lda channel_volume, y
+    and #CHANNEL_MUTED
+    bne silence_channel
+    lda channel_timer, y
+    cmp channel_separation, y
+    bcc silence_channel
+    :
+    lda channel_volume, y
+    sta audio_engine_scratch + 1
+    rts
+silence_channel:
+    lda #%10000000
+    sta audio_engine_scratch + 1
     rts
 after_play_channel:
     inx
@@ -155,17 +168,22 @@ after_play_channel:
 process_channel:
     lda channel_volume, y
     and #CHANNEL_DISABLED
-    bne after_process_channel
+    bne after_play_channel
     lda channel_timer, y
     sec
     sbc #$01
     sta channel_timer, y
-    bcs after_process_channel
+    beq fetch_next_command
+    lda resume_play_flag
+    lsr
+    sta resume_play_flag
+    bcc after_play_channel
+    jmp after_process_channel
 fetch_next_command:
     lda (channel_addr, x)
     sty audio_engine_scratch
     tay
-    jsr increment_channel_pointer
+    increment_channel_pointer
     lda AudioCommandJumpTableHigh, y
     pha
     lda AudioCommandJumpTableLow, y
@@ -182,72 +200,62 @@ set_channel_volume:
     lda (channel_addr, x)
     ora audio_engine_scratch
     sta channel_volume, y
-    jsr increment_channel_pointer
+    increment_channel_pointer
     jmp fetch_next_command
 
 play_note:
     lda (channel_addr, x)
     sta channel_note, y
-    jsr increment_channel_pointer
+    increment_channel_pointer
     lda (channel_addr, x)
     sta channel_timer, y
-    jsr increment_channel_pointer
+    increment_channel_pointer
     jmp after_process_channel
 
 play_rest:
     lda (channel_addr, x)
     sta channel_timer, y
-    jsr increment_channel_pointer
+    increment_channel_pointer
     lda channel_volume, y
-    and #%11110000
+    and #%10110000
     sta channel_volume, Y
     jmp after_process_channel
 
 set_separation:
     lda (channel_addr, x)
     sta channel_separation, y
-    jsr increment_channel_pointer
+    increment_channel_pointer
     jmp fetch_next_command
 
 goto_loop_point:
     lda (channel_addr, x)
     sta audio_engine_scratch
-    jsr increment_channel_pointer
+    increment_channel_pointer
     lda (channel_addr, x)
     sta channel_addr + 1, x
     lda audio_engine_scratch
     sta channel_addr, x
-    jsr increment_channel_pointer
     jmp fetch_next_command
 
 end_sound_effect:
     lda channel_volume, y
     ora #CHANNEL_DISABLED
     sta channel_volume, y
+    inc resume_play_flag
     jmp after_process_channel
 
-increment_channel_pointer:
-    lda channel_addr, x
-    clc
-    adc #$01
-    sta channel_addr, x
-    lda channel_addr + 1, x
-    adc #$00
-    sta channel_addr + 1, x
-    rts
-
 handle_pulse_1:
-    lda channel_volume, y
-    ora #%00110000
-    sta PULSE1DUTY
     lda channel_note, y
     sty audio_engine_scratch
     tay
     lda PeriodTableHigh, y
-    sta PULSE1TIMER
-    lda PeriodTableLow, y
     sta PULSE1LENGTH
+    lda PeriodTableLow, y
+    sta PULSE1TIMER
     ldy audio_engine_scratch
+    lda audio_engine_scratch + 1
+    ora #%00110000
+    sta PULSE1DUTY
     jmp after_play_channel
 
 handle_pulse_2:
@@ -255,11 +263,11 @@ handle_pulse_2:
     sty audio_engine_scratch
     tay
     lda PeriodTableHigh, y
-    sta PULSE2TIMER
-    lda PeriodTableLow, y
     sta PULSE2LENGTH
+    lda PeriodTableLow, y
+    sta PULSE2TIMER
     ldy audio_engine_scratch
-    lda channel_volume, y
+    lda audio_engine_scratch + 1
     ora #%00110000
     sta PULSE2DUTY
     jmp after_play_channel
@@ -270,12 +278,12 @@ handle_triangle:
     tay
     lda PeriodTableHigh, y
     lsr
-    sta TRIANGLETIMER
+    sta TRIANGLELENGTH
     lda PeriodTableLow, y
     ror
-    sta TRIANGLELENGTH
+    sta TRIANGLETIMER
     ldy audio_engine_scratch
-    lda channel_volume, y
+    lda audio_engine_scratch + 1
     and #%11000000
     sta TRIANGLELINEAR
     sta APUFRAMECOUNTER
@@ -284,7 +292,7 @@ handle_triangle:
 handle_noise:
     lda channel_note, y
     sta NOISEPERIOD
-    lda channel_volume, y
+    lda audio_engine_scratch + 1
     ora #%00110000
     sta NOISEVOLUME
     jmp after_play_channel
@@ -293,6 +301,38 @@ handle_noise:
 
 ; Song index in Y
 play_song:
+    cpy NumSongs
+    bcc :+
+    rts
+    :
+    inc audio_update_flag
+    lda SongPulse1PointersLow, y
+    sta pulse_1_music_addr
+    lda SongPulse1PointersHigh, y
+    sta pulse_1_music_addr + 1
+    lda SongPulse2PointersLow, y
+    sta pulse_2_music_addr
+    lda SongPulse2PointersHigh, y
+    sta pulse_2_music_addr + 1
+    lda SongTrianglePointersLow, y
+    sta triangle_music_addr
+    lda SongTrianglePointersHigh, y
+    sta triangle_music_addr + 1
+    lda SongNoisePointersLow, y
+    sta noise_music_addr
+    lda SongNoisePointersHigh, y
+    sta noise_music_addr + 1
+    lda #$00
+    sta pulse_1_music_volume
+    sta pulse_2_music_volume
+    sta triangle_music_volume
+    sta noise_music_volume
+    lda #$01
+    sta pulse_1_music_timer
+    sta pulse_2_music_timer
+    sta triangle_music_timer
+    sta noise_music_timer
+    dec audio_update_flag
     rts
 
 ; Channel index in X, SFX index in Y

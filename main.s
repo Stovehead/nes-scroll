@@ -1822,6 +1822,9 @@ load_level:
 
     jsr init_apu
 
+    ldy #$00
+    jsr play_song
+
     update_nmi normal_nmi
     lda current_ppu_mask
     ora #%00011000 ; Turn rendering back on at next NMI
@@ -3635,6 +3638,9 @@ Level1ObjectList:
     .byte ELECTRIC_GATE_OBJECT, $08, $28, $10
     .byte LIGHT_SWITCH_OBJECT, $08, $54, $D0
     .byte $00, $00, $00, $00 ; Terminator
+
+.include "song_list.s"
+.include "test_song.s"
 
 .macro asciizoffset Str, Off
    .repeat .strlen(Str), I
