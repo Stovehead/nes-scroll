@@ -9,16 +9,12 @@ TestSongPulse1:
     .byte PLAY_NOTE, Note::D2, 8
     .byte PLAY_NOTE, Note::D3, 7
     .byte PLAY_REST, 8
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::A2, 7
     .byte PLAY_REST, 15
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::Gs2, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::G2, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::F2, 15
     .byte PLAY_NOTE, Note::D2, 8
     .byte PLAY_NOTE, Note::F2, 7
@@ -27,16 +23,12 @@ TestSongPulse1:
     .byte PLAY_NOTE, Note::C2, 8
     .byte PLAY_NOTE, Note::D3, 7
     .byte PLAY_REST, 8
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::A2, 7
     .byte PLAY_REST, 15
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::Gs2, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::G2, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::F2, 15
     .byte PLAY_NOTE, Note::D2, 8
     .byte PLAY_NOTE, Note::F2, 7
@@ -45,16 +37,12 @@ TestSongPulse1:
     .byte PLAY_NOTE, Note::B1, 8
     .byte PLAY_NOTE, Note::D3, 7
     .byte PLAY_REST, 8
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::A2, 7
     .byte PLAY_REST, 15
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::Gs2, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::G2, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::F2, 15
     .byte PLAY_NOTE, Note::D2, 8
     .byte PLAY_NOTE, Note::F2, 7
@@ -63,16 +51,12 @@ TestSongPulse1:
     .byte PLAY_NOTE, Note::Bf1, 8
     .byte PLAY_NOTE, Note::D3, 7
     .byte PLAY_REST, 8
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::A2, 7
     .byte PLAY_REST, 15
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::Gs2, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::G2, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::F2, 15
     .byte PLAY_NOTE, Note::D2, 8
     .byte PLAY_NOTE, Note::F2, 7
@@ -87,20 +71,16 @@ TestSongPulse2:
     .byte PLAY_REST, 120
     .byte PLAY_REST, 120
     .byte PLAY_REST, 120
-    .byte SET_VOLUME, %01001111
     @loop:
     .byte PLAY_NOTE, Note::D1, 15
     .byte PLAY_NOTE, Note::D1, 15
     .byte PLAY_NOTE, Note::D1, 7
     .byte PLAY_NOTE, Note::D1, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::D1, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::D1, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::D1, 8
     .byte PLAY_NOTE, Note::D1, 7
     .byte PLAY_NOTE, Note::D1, 8
@@ -110,13 +90,10 @@ TestSongPulse2:
     .byte PLAY_NOTE, Note::C1, 7
     .byte PLAY_NOTE, Note::C1, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::C1, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::C1, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::C1, 8
     .byte PLAY_NOTE, Note::C1, 7
     .byte PLAY_NOTE, Note::C1, 8
@@ -126,13 +103,10 @@ TestSongPulse2:
     .byte PLAY_NOTE, Note::B0, 7
     .byte PLAY_NOTE, Note::B0, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::B0, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::B0, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::B0, 8
     .byte PLAY_NOTE, Note::B0, 7
     .byte PLAY_NOTE, Note::B0, 8
@@ -142,13 +116,10 @@ TestSongPulse2:
     .byte PLAY_NOTE, Note::Bf0, 7
     .byte PLAY_NOTE, Note::Bf0, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::C1, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::C1, 8
     .byte PLAY_REST, 7
-    .byte SET_VOLUME, %01001111
     .byte PLAY_NOTE, Note::C1, 8
     .byte PLAY_NOTE, Note::C1, 7
     .byte PLAY_NOTE, Note::C1, 8

@@ -48,6 +48,14 @@ APUFRAMECOUNTER = $4017
     triangle_music_volume: .res 1
     noise_sfx_volume: .res 1
     noise_music_volume: .res 1
+    pulse_1_sfx_volume_mask: .res 1
+    pulse_1_music_volume_mask: .res 1
+    pulse_2_sfx_volume_mask: .res 1
+    pulse_2_music_volume_mask: .res 1
+    triangle_sfx_volume_mask: .res 1
+    triangle_music_volume_mask: .res 1
+    noise_sfx_volume_mask: .res 1
+    noise_music_volume_mask: .res 1
     pulse_1_sfx_separation: .res 1
     pulse_1_music_separation: .res 1
     pulse_2_sfx_separation: .res 1
@@ -75,6 +83,7 @@ CHANNEL_DISABLED = %00100000
 channel_addr = pulse_1_sfx_addr
 channel_note = pulse_1_sfx_note
 channel_volume = pulse_1_sfx_volume
+channel_volume_mask = pulse_1_sfx_volume_mask
 channel_separation = pulse_1_sfx_separation
 channel_timer = pulse_1_sfx_timer
 
@@ -226,16 +235,17 @@ play_note:
     increment_channel_pointer
     lda (channel_addr, x)
     sta channel_timer, y
+    lda #%11111111
+    sta channel_volume_mask, y
     increment_channel_pointer
     jmp after_process_channel
 
 play_rest:
     lda (channel_addr, x)
     sta channel_timer, y
+    lda #%10000000
+    sta channel_volume_mask, y
     increment_channel_pointer
-    lda channel_volume, y
-    and #%10110000
-    sta channel_volume, Y
     jmp after_process_channel
 
 set_separation:
@@ -275,6 +285,7 @@ handle_pulse_1:
     sta PULSE1TIMER
     ldy audio_engine_scratch
     lda audio_engine_scratch + 1
+    and channel_volume_mask, y
     ora #%00110000
     sta PULSE1DUTY
     jmp after_play_channel
@@ -293,6 +304,7 @@ handle_pulse_2:
     sta PULSE2TIMER
     ldy audio_engine_scratch
     lda audio_engine_scratch + 1
+    and channel_volume_mask, y
     ora #%00110000
     sta PULSE2DUTY
     jmp after_play_channel
@@ -313,7 +325,7 @@ handle_triangle:
     sta TRIANGLETIMER
     ldy audio_engine_scratch
     lda audio_engine_scratch + 1
-    and #%11000000
+    and channel_volume_mask, y
     sta TRIANGLELINEAR
     sta APUFRAMECOUNTER
     jmp after_play_channel
@@ -322,6 +334,7 @@ handle_noise:
     lda channel_note, y
     sta NOISEPERIOD
     lda audio_engine_scratch + 1
+    and channel_volume_mask, y
     ora #%00110000
     sta NOISEVOLUME
     jmp after_play_channel
