@@ -64,6 +64,9 @@ APUFRAMECOUNTER = $4017
     triangle_music_timer: .res 1
     noise_sfx_timer: .res 1
     noise_music_timer: .res 1
+    pulse_1_period_high_byte: .res 1
+    pulse_2_period_high_byte: .res 1
+    triangle_period_high_byte: .res 1
     resume_play_flag: .res 1
 .popseg
 
@@ -177,8 +180,22 @@ process_channel:
     lda resume_play_flag
     lsr
     sta resume_play_flag
-    bcc after_play_channel
-    jmp after_process_channel
+    bcs after_process_channel
+    lda channel_timer, y
+    cmp channel_separation, y
+    bcs after_play_channel
+    sty audio_engine_scratch
+    tya
+    lsr
+    tay
+    lda ChannelHandlerJumpTableHigh, y
+    pha
+    lda ChannelHandlerJumpTableLow, y
+    pha
+    ldy audio_engine_scratch
+    lda #%10000000
+    sta audio_engine_scratch + 1
+    rts
 fetch_next_command:
     lda (channel_addr, x)
     sty audio_engine_scratch
@@ -249,7 +266,11 @@ handle_pulse_1:
     sty audio_engine_scratch
     tay
     lda PeriodTableHigh, y
+    cmp pulse_1_period_high_byte
+    beq :+
     sta PULSE1LENGTH
+    :
+    sta pulse_1_period_high_byte
     lda PeriodTableLow, y
     sta PULSE1TIMER
     ldy audio_engine_scratch
@@ -263,7 +284,11 @@ handle_pulse_2:
     sty audio_engine_scratch
     tay
     lda PeriodTableHigh, y
+    cmp pulse_2_period_high_byte
+    beq :+
     sta PULSE2LENGTH
+    :
+    sta pulse_2_period_high_byte
     lda PeriodTableLow, y
     sta PULSE2TIMER
     ldy audio_engine_scratch
@@ -278,7 +303,11 @@ handle_triangle:
     tay
     lda PeriodTableHigh, y
     lsr
+    cmp triangle_period_high_byte
+    beq :+
     sta TRIANGLELENGTH
+    :
+    sta triangle_period_high_byte
     lda PeriodTableLow, y
     ror
     sta TRIANGLETIMER
@@ -351,6 +380,148 @@ play_sound_effect:
     SET_SEPARATION
     GOTO_LOOP
     END_SFX
+.endenum
+
+.enum Note
+    A0
+    As0
+    Bf0 = As0
+    B0
+    Bs0 = C1
+    Cf1 = B0
+    C1
+    Cs1
+    Df1 = Cs1
+    D1
+    Ds1
+    Ef1 = Ds1
+    E1
+    Es1 = F1
+    Ff1 = E1
+    F1
+    Fs1
+    Gf1 = Fs1
+    G1
+    Gs1
+    Af1 = Gs1
+    A1
+    As1
+    Bf1 = As1
+    B1
+    Bs1 = C2
+    Cf2 = B1
+    C2
+    Cs2
+    Df2 = Cs2
+    D2
+    Ds2
+    Ef2 = Ds2
+    E2
+    Es2 = F2
+    Ff2 = E2
+    F2
+    Fs2
+    Gf2 = Fs2
+    G2
+    Gs2
+    Af2 = Gs2
+    A2
+    As2
+    Bf2 = As2
+    B2
+    Bs2 = C3
+    Cf3 = B2
+    C3
+    Cs3
+    Df3 = Cs3
+    D3
+    Ds3
+    Ef3 = Ds3
+    E3
+    Es3 = F3
+    Ff3 = E3
+    F3
+    Fs3
+    Gf3 = Fs3
+    G3
+    Gs3
+    Af3 = Gs3
+    A3
+    As3
+    Bf3 = As3
+    B3
+    Bs3 = C4
+    Cf4 = B3
+    C4
+    Cs4
+    Df4 = Cs4
+    D4
+    Ds4
+    Ef4 = Ds4
+    E4
+    Es4 = F4
+    Ff4 = E4
+    F4
+    Fs4
+    Gf4 = Fs4
+    G4
+    Gs4
+    Af4 = Gs4
+    A4
+    As4
+    Bf4 = As4
+    B4
+    Bs4 = C5
+    Cf5 = B4
+    C5
+    Cs5
+    Df5 = Cs5
+    D5
+    Ds5
+    Ef5 = Ds5
+    E5
+    Es5 = F5
+    Ff5 = E5
+    F5
+    Fs5
+    Gf5 = Fs5
+    G5
+    Gs5
+    Af5 = Gs5
+    A5
+    As5
+    Bf5 = As5
+    B5
+    Bs5 = C6
+    Cf6 = B5
+    C6
+    Cs6
+    Df6 = Cs6
+    D6
+    Ds6
+    Ef6 = Ds6
+    E6
+    Es6 = F6
+    Ff6 = E6
+    F6
+    Fs6
+    Gf6 = Fs6
+    G6
+    Gs6
+    Af6 = Gs6
+    A6
+    As6
+    Bf6 = As6
+    B6
+    Bs6 = C7
+    Cf7 = B6
+    C7
+    Cs7
+    Df7 = Cs7
+    D7
+    Ds7
+    Ef7 = Ds7
+    E7
 .endenum
 
 .define AudioCommandJumpTable \
