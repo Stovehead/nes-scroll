@@ -8,26 +8,9 @@ OAMDATA = $2004
 PPUSCROLL = $2005
 PPUADDR = $2006
 PPUDATA = $2007
-PULSE1DUTY = $4000
-PULSE1SWEEP = $4001
-PULSE1TIMER = $4002
-PULSE1LENGTH = $4003
-PULSE2DUTY = $4004
-PULSE2SWEEP = $4005
-PULSE2TIMER = $4006
-PULSE2LENGTH = $4007
-TRIANGLELINEAR = $4008
-TRIANGLETIMER = $400A
-TRIANGLELENGTH = $400B
-NOISEVOLUME = $400C
-NOISEPERIOD = $400E
-NOISELENGTH = $400F
-APUDMC = $4010
 OAMDMA = $4014
-APUSTATUS = $4015
 JOY1 = $4016
 JOY2 = $4017
-APUFRAMECOUNTER = $4017
 JMP_OPCODE = $4C
 RTI_OPCODE = $40
 OAMBUFFER = $0200
@@ -128,6 +111,24 @@ LIGHTS_OFF = %00000001
     .addr crash_handler
 
 .segment "STARTUP"
+
+.segment "RODATA"
+
+    .byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+    .byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+    .byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+    .byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+Colors:
+    .byte $00, $01, $02, $03, $04, $05, $06, $07, $08, $09, $0A, $0B, $0C, $0F, $0E, $0F
+    .byte $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $1A, $1B, $1C, $1D, $1E, $00
+    .byte $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $2A, $2B, $2C, $2D, $2E, $10
+    .byte $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $3A, $3B, $3C, $3D, $3E, $30
+    .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
+    .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
+    .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
+    .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
+
+; Put this at the top to ensure alignment
 
 .segment "CODE"
 
@@ -296,6 +297,15 @@ normal_nmi:
     pha ; Save A register
     lda frame_done
     bne @after_early_return
+    txa
+    pha
+    tya
+    pha
+    jsr update_audio
+    pla
+    tay
+    pla
+    tax
     pla
     rti
 @after_early_return:
@@ -416,6 +426,8 @@ normal_nmi:
 
     lda current_ppu_ctrl
     sta PPUCTRL
+
+    jsr update_audio
 
 game_logic:
     inc frame_count
@@ -856,30 +868,7 @@ wipe_nmi:
     sta NOISELENGTH
 	rti
 
-init_apu:
-    lda #$08
-    sta PULSE1SWEEP
-    sta PULSE2SWEEP
-    lda #$80
-    sta TRIANGLELINEAR
-    lda #$30
-    sta PULSE1DUTY
-    sta PULSE2DUTY
-    sta NOISEVOLUME
-    lda #$00
-    sta PULSE1TIMER
-    sta PULSE1LENGTH
-    sta PULSE2TIMER
-    sta PULSE2LENGTH
-    sta TRIANGLETIMER
-    sta TRIANGLELENGTH
-    sta NOISEPERIOD
-    sta NOISELENGTH
-    lda #$0F
-    sta APUSTATUS
-    lda #$40
-    sta APUFRAMECOUNTER
-    rts
+.include "audio_engine.s"
 
 dynamic_jump:
     jmp (scratch)
@@ -1831,6 +1820,8 @@ load_level:
 
     @after_load_objects_loop:
 
+    jsr init_apu
+
     update_nmi normal_nmi
     lda current_ppu_mask
     ora #%00011000 ; Turn rendering back on at next NMI
@@ -2561,6 +2552,8 @@ print_hex:
 .include "light_switch.s"
 .include "player.s"
 .include "electric_gate.s"
+
+.segment "RODATA"
 
 NULL_OBJECT = 0
 LIGHT_SWITCH_OBJECT = 1
@@ -3642,22 +3635,6 @@ Level1ObjectList:
     .byte ELECTRIC_GATE_OBJECT, $08, $28, $10
     .byte LIGHT_SWITCH_OBJECT, $08, $54, $D0
     .byte $00, $00, $00, $00 ; Terminator
-
-.align 256
-
-    .byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
-    .byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
-    .byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
-    .byte $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
-Colors:
-    .byte $00, $01, $02, $03, $04, $05, $06, $07, $08, $09, $0A, $0B, $0C, $0F, $0E, $0F
-    .byte $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $1A, $1B, $1C, $1D, $1E, $00
-    .byte $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $2A, $2B, $2C, $2D, $2E, $10
-    .byte $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $3A, $3B, $3C, $3D, $3E, $30
-    .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
-    .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
-    .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
-    .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
 
 .macro asciizoffset Str, Off
    .repeat .strlen(Str), I
