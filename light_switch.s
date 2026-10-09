@@ -57,9 +57,17 @@ light_switch_still_step:
     sta level_flags
     and #LIGHTS_OFF
     bne :+
+    ldy #$01
+    jsr unmute_channel
+    ldy #$03
+    jsr unmute_channel
     lda #ANIM_LIGHT_SWITCH_UP
     jmp :++
     :
+    ldy #$01
+    jsr mute_channel
+    ldy #$03
+    jsr mute_channel
     lda #ANIM_LIGHT_SWITCH_DOWN
     :
     sta scratch + 6

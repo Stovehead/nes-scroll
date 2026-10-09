@@ -75,7 +75,7 @@ TestSongTriangle:
     .addr @loop
 
 TestSongNoise:
-    .byte SET_VOLUME, %00001000
+    .byte SET_VOLUME, %00001111
     @loop:
     .byte SET_SEPARATION, 40
     .byte PLAY_NOTE, 8, 40

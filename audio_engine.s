@@ -133,6 +133,7 @@ update_audio:
     beq :+
     rts ; Avoid updating the audio this frame if the audio being updated was interrupted
     :
+    inc audio_update_flag
     ldx #$00
     ldy #$00
     jmp process_channel
@@ -171,11 +172,16 @@ silence_channel:
     sta audio_engine_scratch + 1
     rts
 after_play_channel:
+    lda audio_update_flag
+    bmi :+ ; This is insane
     inx
     inx
     iny
     cpy #$08
     bcc process_channel
+    :
+    lda #$00
+    sta audio_update_flag
     rts
 process_channel:
     lda channel_volume, y
@@ -378,6 +384,21 @@ play_song:
 ; Channel index in X, SFX index in Y
 play_sound_effect:
     rts
+
+; Channel index in Y
+mute_channel:
+    dec audio_update_flag
+    lda channel_volume, y
+    ora #CHANNEL_MUTED
+    sta channel_volume, y
+    jmp after_process_channel
+
+unmute_channel:
+    dec audio_update_flag
+    lda channel_volume, y
+    and #$FF ^ CHANNEL_MUTED
+    sta channel_volume, y
+    jmp after_process_channel
 
 .popseg
 
