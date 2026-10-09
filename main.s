@@ -74,6 +74,7 @@ LIGHTS_OFF = %00000001
     light_fade_timer: .res 1
     seed: .res 2
     nmi_jump: .res 3
+    game_paused: .res 1
 
 .bss
     object_ids: .res $10
@@ -258,7 +259,7 @@ main:
 
     update_nmi load_level
 
-    lda #%10100000	; Enable NMI and set sprite size
+    lda #%10101000	; Enable NMI and set sprite size
     sta current_ppu_ctrl
     sta PPUCTRL
 
@@ -351,8 +352,13 @@ normal_nmi:
     lda #<Colors
     sta scratch
     lda brightness
+    sec
+    sbc #$01
+    ldy game_paused
+    bne :+ ; Darken the screen if the game is paused
     clc
-    adc #$01
+    adc #$02
+    :
     ror
     bcs @no_emphasis
     tay
@@ -406,6 +412,13 @@ normal_nmi:
     .endrepeat
     ldy background_color
     lda (scratch), y
+    ldx game_paused
+    beq :+
+    sta PPUDATA
+    lda #$20
+    sta PPUDATA
+    jmp @after_update_palettes
+    :
     .repeat 4, i
     sta PPUDATA
     .repeat 3, j
@@ -415,6 +428,7 @@ normal_nmi:
     .endrepeat
     .endrepeat
 
+    @after_update_palettes:
     bit PPUSTATUS ; Set scroll
     lda x_scroll
     sta PPUSCROLL
@@ -433,6 +447,76 @@ game_logic:
     inc frame_count
     jsr read_controllers
 
+    lda game_paused
+    beq @game_not_paused
+    lda buttons_pressed
+    and #BUTTON_START
+    bne :+
+    dec frame_done
+    rti
+    :
+    dec game_paused
+    lda current_ppu_ctrl
+    ora #%00100000
+    sta current_ppu_ctrl
+    jsr unpause_audio
+    jmp @after_check_pause_button
+    @game_not_paused:
+
+    lda buttons_pressed
+    and #BUTTON_START
+    beq @after_check_pause_button
+    inc game_paused
+    jsr pause_audio
+    ldy #$77
+    lda #$68
+    ldx #$00
+    sty OAMBUFFER
+    stx OAMBUFFER + 2
+    sta OAMBUFFER + 3
+    clc
+    adc #$08
+    sty OAMBUFFER + 4
+    stx OAMBUFFER + 6
+    sta OAMBUFFER + 7
+    adc #$08
+    sty OAMBUFFER + 8
+    stx OAMBUFFER + 10
+    sta OAMBUFFER + 11
+    adc #$08
+    sty OAMBUFFER + 12
+    stx OAMBUFFER + 14
+    sta OAMBUFFER + 15
+    adc #$08
+    sty OAMBUFFER + 16
+    stx OAMBUFFER + 18
+    sta OAMBUFFER + 19
+    adc #$08
+    sty OAMBUFFER + 20
+    stx OAMBUFFER + 22
+    sta OAMBUFFER + 23
+    adc #$08
+    ldy #$01
+    ldx #$00
+    :
+    lda PauseString, x
+    beq @after_write_pause_string
+    sta OAMBUFFER, y
+    inx
+    iny
+    iny
+    iny
+    iny
+    jmp :-
+    @after_write_pause_string:
+    lda current_ppu_ctrl
+    and #%11011111 ; Set sprite size to 8x8
+    sta current_ppu_ctrl
+    lda #$FF
+    dey
+    jmp @start_ff_fill_loop
+    @after_check_pause_button:
+
     lda buttons_pressed
     and #BUTTON_SELECT
     beq :++
@@ -445,26 +529,6 @@ game_logic:
     :
     sta current_level
     jmp load_level
-    :
-
-    lda buttons_pressed
-    and #BUTTON_START
-    beq :+
-    lda #236
-    sta OAMBUFFER 
-    lda #$00
-    sta OAMBUFFER + 2
-    sta OAMBUFFER + 3
-    sta scratch + 1
-    lda #$01
-    sta OAMBUFFER + 1
-    lda #$04
-    sta scratch + 2
-    sta scratch + 3
-    lda #$0D
-    sta scratch
-    update_nmi wipe_nmi
-    rti
     :
 
     lda buttons_pressed
@@ -3653,6 +3717,9 @@ CrashMessage:
     asciizoffset "A FATAL ERROR HAS OCCURRED", $A5
     asciizoffset "PLEASE REPORT THIS ISSUE", $A5
     asciizoffset "STACK DUMP", $A5
+
+PauseString:
+    asciizoffset "PAUSED", $A5
 
 .segment "CHARS"
     .incbin "bg.bin"

@@ -179,9 +179,8 @@ after_play_channel:
     iny
     cpy #$08
     bcc process_channel
+    dec audio_update_flag
     :
-    lda #$00
-    sta audio_update_flag
     rts
 process_channel:
     lda channel_volume, y
@@ -391,14 +390,39 @@ mute_channel:
     lda channel_volume, y
     ora #CHANNEL_MUTED
     sta channel_volume, y
-    jmp after_process_channel
+    jsr after_process_channel
+    inc audio_update_flag
+    rts
 
 unmute_channel:
     dec audio_update_flag
     lda channel_volume, y
     and #$FF ^ CHANNEL_MUTED
     sta channel_volume, y
-    jmp after_process_channel
+    jsr after_process_channel
+    inc audio_update_flag
+    rts
+
+pause_audio:
+    dec audio_update_flag
+    lda #%00110000
+    sta PULSE1DUTY
+    sta PULSE2DUTY
+    sta NOISEVOLUME
+    lda #%10000000
+    sta TRIANGLELINEAR
+    sta APUFRAMECOUNTER
+    rts
+
+unpause_audio:
+    ldy #$00
+    :
+    jsr after_process_channel
+    iny
+    cpy #$08
+    bcc :-
+    inc audio_update_flag
+    rts
 
 .popseg
 
