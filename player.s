@@ -446,6 +446,8 @@ player_step:
     beq @after_air_code
     lda #PLAYER_JUMP_VELOCITY
     sta player_y_velocity, x
+    lda #ANIM_PLAYER_IDLE
+    sta object_animations_ids, x ; Force reload animation
     @not_on_ground:
     lda #ANIM_PLAYER_JUMP
     sta scratch + 2

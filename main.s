@@ -3183,7 +3183,7 @@ AnimationFrameLengthPointersHigh:
 
 ; Highest bit determines whether animation loops or not
 AnimationLengths:
-    .byte 1, 128 + 4, 1, 5, 5, 1, 128 + 8
+    .byte 1, 128 + 4, 2, 5, 5, 1, 128 + 8
 
 AnimPlayerIdleFrames:
     .byte ANIM_PLAYER_IDLE_FRAME
@@ -3198,10 +3198,10 @@ AnimPlayerWalkLengths:
     .byte $08, $08, $08, $08
 
 AnimPlayerJumpFrames:
-    .byte $05
+    .byte ANIM_PLAYER_IDLE_FRAME, $05
 
 AnimPlayerJumpLengths:
-    .byte $00
+    .byte $01, $00
 
 AnimLightSwitchDownFrames:
     .byte ANIM_LIGHT_SWITCH_DOWN_FRAME_0, $07, $08, $09, ANIM_LIGHT_SWITCH_UP_FRAME_0
