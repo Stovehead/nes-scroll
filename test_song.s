@@ -2,7 +2,7 @@
 .segment "RODATA"
 
 TestSongPulse1:
-    .byte SET_VOLUME, %01001111
+    .byte SET_VOLUME, %01000100
     .byte SET_SEPARATION, $02
     @loop:
     .byte PLAY_NOTE, Note::E4, 20
@@ -36,7 +36,7 @@ TestSongPulse1:
     .addr @loop
 
 TestSongPulse2:
-    .byte SET_VOLUME, %10001000
+    .byte SET_VOLUME, %10000010
     .byte SET_SEPARATION, $00
     @loop:
     .byte PLAY_NOTE, Note::C4, 20
@@ -75,7 +75,7 @@ TestSongTriangle:
     .addr @loop
 
 TestSongNoise:
-    .byte SET_VOLUME, %00001111
+    .byte SET_VOLUME, %00000100
     @loop:
     .byte SET_SEPARATION, 40
     .byte PLAY_NOTE, 8, 40

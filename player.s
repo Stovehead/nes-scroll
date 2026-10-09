@@ -60,6 +60,29 @@ player_init:
     jsr test_collision
 .endmacro
 
+player_on_hit_ground:
+    lda player_y_velocity, x
+    cmp #$10
+    bcc :+
+    txa
+    pha
+    tya
+    pha
+    ldy #SFX::LANDING
+    ldx #$06
+    jsr play_sound_effect
+    pla
+    tay
+    pla
+    tax
+    :
+    lda #$00
+    sta player_y_velocity, x
+    lda player_flags, x
+    ora #PLAYER_IS_GROUNDED
+    sta player_flags, x ; Store that we're on the ground
+    rts
+
 ; Object index in X
 player_x_velocity = object_variables_0
 player_y_velocity = object_variables_1
@@ -150,11 +173,7 @@ player_step:
     sbc #$01 ; Snap position up
     and #$F0
     sta object_y_positions, x
-    lda #$00
-    sta player_y_velocity, x ; Reset Y velocity
-    lda player_flags, x
-    ora #PLAYER_IS_GROUNDED
-    sta player_flags, x ; Store that we're on the ground
+    jsr player_on_hit_ground
     ldy scratch + 4
     dey
     bne @test_floor_collision_left
@@ -173,11 +192,7 @@ player_step:
     sbc #$01
     and #$F0
     sta object_y_positions, x
-    lda #$00
-    sta player_y_velocity, x
-    lda player_flags, x
-    ora #PLAYER_IS_GROUNDED
-    sta player_flags, x ; Store that we're on the ground
+    jsr player_on_hit_ground
     ldy scratch + 4
     dey
     bne @test_floor_collision_right

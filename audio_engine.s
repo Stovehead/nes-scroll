@@ -100,11 +100,6 @@ init_apu:
     sta PULSE1DUTY
     sta PULSE2DUTY
     sta NOISEVOLUME
-    ldy #$08
-    :
-    dey
-    sta channel_volume, y
-    bne :-
     lda #$00
     sta PULSE1TIMER
     sta PULSE1LENGTH
@@ -119,6 +114,12 @@ init_apu:
     sta APUSTATUS
     lda #$40
     sta APUFRAMECOUNTER
+    lda #$20
+    ldy #$08
+    :
+    dey
+    sta channel_volume, y
+    bne :-
     rts
 
 .macro increment_channel_pointer
@@ -201,6 +202,15 @@ process_channel:
     sty audio_engine_scratch
     tya
     lsr
+    tya
+    lsr
+    bcc :+
+    sta audio_engine_scratch + 1
+    lda channel_volume - 1, y
+    and #CHANNEL_DISABLED | CHANNEL_MUTED
+    beq after_play_channel ; Skip playing music channel if a sound effect is playing
+    lda audio_engine_scratch + 1
+    :
     tay
     lda ChannelHandlerJumpTableHigh, y
     pha
@@ -382,6 +392,20 @@ play_song:
 
 ; Channel index in X, SFX index in Y
 play_sound_effect:
+    inc audio_update_flag
+    lda channel_volume, x
+    and #$FF ^ CHANNEL_DISABLED ^ CHANNEL_MUTED
+    sta channel_volume, x
+    lda #$01
+    sta channel_timer, x
+    txa
+    asl
+    tax
+    lda SoundEffectPointersLow, y
+    sta channel_addr, x
+    lda SoundEffectPointersHigh, y
+    sta channel_addr + 1, x
+    dec audio_update_flag
     rts
 
 ; Channel index in Y

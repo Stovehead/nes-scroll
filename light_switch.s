@@ -52,6 +52,10 @@ light_switch_still_step:
     sta skip_light_switch_collision
     lda light_switch_collision_last_frame, x
     bne @after_determine_collision
+    txa
+    pha
+    tya
+    pha
     lda level_flags
     eor #LIGHTS_OFF
     sta level_flags
@@ -61,6 +65,9 @@ light_switch_still_step:
     jsr unmute_channel
     ldy #$03
     jsr unmute_channel
+    ldx #$04
+    ldy #SFX::POWER_ON
+    jsr play_sound_effect
     lda #ANIM_LIGHT_SWITCH_UP
     jmp :++
     :
@@ -68,9 +75,16 @@ light_switch_still_step:
     jsr mute_channel
     ldy #$03
     jsr mute_channel
+    ldx #$04
+    ldy #SFX::POWER_OFF
+    jsr play_sound_effect
     lda #ANIM_LIGHT_SWITCH_DOWN
     :
     sta scratch + 6
+    pla
+    tay
+    pla
+    tax
     lda level_flags
     lda #LIGHT_SWITCH_FADE_LENGTH
     sta light_fade_timer

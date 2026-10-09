@@ -1548,6 +1548,7 @@ load_level:
     sta x_scroll
     sta y_scroll
     jsr player_init
+    jsr pause_audio
     ldx current_level
     lda current_ppu_ctrl
     lda #$20 ; Get ready to update nametable
@@ -1886,7 +1887,7 @@ load_level:
 
     jsr init_apu
 
-    ldy #$00
+    ldy #$01
     jsr play_song
 
     update_nmi normal_nmi
@@ -3705,6 +3706,8 @@ Level1ObjectList:
 
 .include "song_list.s"
 .include "test_song.s"
+.include "silence_song.s"
+.include "sound_effects.s"
 
 .macro asciizoffset Str, Off
    .repeat .strlen(Str), I
