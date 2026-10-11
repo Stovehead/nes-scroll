@@ -2617,6 +2617,45 @@ print_hex:
     sta PPUDATA
     rts
 
+draw_logo:
+    lda current_ppu_ctrl
+    and #%11111011
+    ora #%00010000
+    sta current_ppu_ctrl
+    sta PPUCTRL
+    lda PPUSTATUS
+    lda #$21
+    sta PPUADDR
+    lda #$00
+    sta PPUADDR
+    ldx #$00
+    @loop:
+    lda LogoTileLayout, x
+    beq @after_draw_logo
+    bmi @consecutive_run
+    tay
+    inx
+    lda LogoTileLayout, x
+    inx
+    :
+    sta PPUDATA
+    dey
+    bne :-
+    jmp @loop
+    @consecutive_run:
+    and #%01111111
+    tay
+    inx
+    :
+    lda LogoTileLayout, x
+    sta PPUDATA
+    inx
+    dey
+    bne :-
+    jmp @loop
+    @after_draw_logo:
+    rts
+
 .include "light_switch.s"
 .include "player.s"
 .include "electric_gate.s"
@@ -3725,7 +3764,8 @@ PauseString:
     asciizoffset "PAUSED", $A5
 
 LogoTileLayout:
-    .byte $03, $D4, $81, $D9, $03, $D5, $87, $DB, $D9, $DB, $D4, $D9, $DB, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $81, $DB, $06, $D4, $82, $D8, $DA, $03, $D4, $91, $D8, $DA, $D4, $D8, $DA, $D8, $DA, $D4, $D8, $DA, $D8, $DA, $D4, $D8, $DA, $D8, $DA, $0A, $D4, $82, $D9, $DB, $03, $D4, $81, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $87, $DB, $D9, $DB, $D4, $D9, $DB, $D9, $03, $D5, $81, $DB, $06, $D4, $82, $D8, $DA, $03, $D4, $8F, $D8, $DA, $D4, $D8, $DA, $D8, $DA, $D4, $D8, $DA, $D8, $DA, $D4, $D8, $DA, $03, $D4, $82, $D8, $DA, $07, $D4, $81, $D9, $03, $D5, $8C, $DB, $D9, $DB, $D4, $D9, $DB, $D9, $DB, $D4, $D9, $DB, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $81, $DB, $33, $D4, $82, $D8, $DA, $03, $D4, $81, $D8, $03, $D5, $81, $D8, $03, $D5, $82, $DB, $D9, $02, $D5, $81, $DA, $0E, $D4, $82, $D9, $DB, $03, $D4, $8D, $D9, $DB, $D4, $D5, $D7, $D4, $D8, $DA, $D8, $DA, $D4, $D9, $DB, $0D, $D4, $82, $D8, $DA, $03, $D4, $82, $D8, $DA, $02, $D4, $81, $D5, $02, $D4, $83, $D9, $DB, $D9, $02, $D5, $81, $DA, $0E, $D4, $82, $D9, $DB, $03, $D4, $8A, $D9, $DB, $D4, $D6, $D5, $D4, $D8, $DA, $D8, $DA, $10, $D4, $81, $D8, $03, $D5, $82, $DA, $D8, $03, $D5, $81, $DB, $03, $D5, $83, $DB, $D9, $DB, $05, $D4
+    .byte $03, $06, $81, $D9, $03, $D5, $87, $DB, $D9, $DB, $06, $D9, $DB, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $81, $DB, $06, $06, $82, $D8, $DA, $03, $06, $91, $D8, $DA, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $D8, $DA, $0A, $06, $82, $D9, $DB, $03, $06, $81, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $87, $DB, $D9, $DB, $06, $D9, $DB, $D9, $03, $D5, $81, $DB, $06, $06, $82, $D8, $DA, $03, $06, $8F, $D8, $DA, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $03, $06, $82, $D8, $DA, $07, $06, $81, $D9, $03, $D5, $8C, $DB, $D9, $DB, $06, $D9, $DB, $D9, $DB, $06, $D9, $DB, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $81, $DB, $06, $06, $20, $D4, $0C, $06, $82, $D8, $DA, $03, $06, $81, $D8, $03, $D5, $81, $D8, $03, $D5, $82, $DB, $D9, $03, $D5, $81, $DB, $0D, $06, $82, $D9, $DB, $03, $06, $8D, $D9, $DB, $06, $D5, $D7, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $0D, $06, $82, $D8, $DA, $03, $06, $82, $D8, $DA, $02, $06, $81, $D5, $02, $06, $83, $D9, $DB, $D9, $03, $D5, $81, $DB, $0D, $06, $82, $D9, $DB, $03, $06, $8A, $D9, $DB, $06, $D6, $D5, $06, $D8, $DA, $D8, $DA, $10, $06, $81, $D8, $03, $D5, $82, $DA, $D8, $03, $D5, $81, $DB, $03, $D5, $83, $DB, $D9, $DB, $06, $06
+    .byte $00
 
 .segment "CHARS"
     .incbin "bg.bin"
