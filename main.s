@@ -352,15 +352,19 @@ normal_nmi:
     lda #<Colors
     sta scratch
     lda brightness
-    sec
-    sbc #$01
     ldy game_paused
     bne :+ ; Darken the screen if the game is paused
     clc
     adc #$02
     :
+    sec
+    sbc #$01
+    cmp #$80
     ror
     bcs @no_emphasis
+    cmp #$01
+    bpl @no_emphasis
+    @add_emphasis:
     tay
     lda current_ppu_mask
     ora #%11100000
@@ -444,7 +448,6 @@ normal_nmi:
     jsr update_audio
 
 game_logic:
-    inc frame_count
     jsr read_controllers
 
     lda game_paused
@@ -463,6 +466,7 @@ game_logic:
     jmp @after_check_pause_button
     @game_not_paused:
 
+    inc frame_count
     lda buttons_pressed
     and #BUTTON_START
     beq @after_check_pause_button
