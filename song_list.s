@@ -6,7 +6,7 @@ NumSongs:
 
 .define SongPulse1Pointers \
     SilenceSongPulse1, \
-    TestSongPulse1
+    TitleThemePulse1
 
 SongPulse1PointersLow:
     .lobytes SongPulse1Pointers
@@ -16,7 +16,7 @@ SongPulse1PointersHigh:
 
 .define SongPulse2Pointers \
     SilenceSongPulse2, \
-    TestSongPulse2
+    TitleThemePulse2
 
 SongPulse2PointersLow:
     .lobytes SongPulse2Pointers
@@ -26,7 +26,7 @@ SongPulse2PointersHigh:
 
 .define SongTrianglePointers \
     SilenceSongTriangle, \
-    TestSongTriangle
+    TitleThemeTriangle
 
 SongTrianglePointersLow:
     .lobytes SongTrianglePointers
@@ -36,7 +36,7 @@ SongTrianglePointersHigh:
 
 .define SongNoisePointers \
     SilenceSongNoise, \
-    TestSongNoise
+    TitleThemeNoise
 
 SongNoisePointersLow:
     .lobytes SongNoisePointers

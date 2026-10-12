@@ -3744,7 +3744,7 @@ Level1ObjectList:
     .byte $00, $00, $00, $00 ; Terminator
 
 .include "song_list.s"
-.include "test_song.s"
+.include "title_theme.s"
 .include "silence_song.s"
 .include "sound_effects.s"
 
