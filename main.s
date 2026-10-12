@@ -527,7 +527,7 @@ title_screen_logic:
     lda frame_count
     and #%00100000
     bne @draw_press_start
-    ldy #$11
+    ldy #11
     lda #$06
     :
     sta $0103, y
