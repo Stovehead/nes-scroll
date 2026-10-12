@@ -92,6 +92,8 @@ channel_timer = pulse_1_sfx_timer
 .segment "CODE"
 
 init_apu:
+    lda #$0F
+    sta APUSTATUS
     lda #$08
     sta PULSE1SWEEP
     sta PULSE2SWEEP
@@ -112,8 +114,9 @@ init_apu:
     sta NOISELENGTH
     sta DMCCOUNTER
     sta audio_update_flag
-    lda #$0F
-    sta APUSTATUS
+    sta pulse_1_period_high_byte
+    sta pulse_2_period_high_byte
+    sta triangle_period_high_byte
     lda #$40
     sta APUFRAMECOUNTER
     lda #$20

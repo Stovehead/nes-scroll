@@ -22,9 +22,6 @@ BUTTON_UP =     %00001000
 BUTTON_DOWN =   %00000100
 BUTTON_LEFT =   %00000010
 BUTTON_RIGHT =  %00000001
-WILL_LOAD_LEVEL = 0
-LEVEL_READY = 1
-LEVEL_LOADED = 2
 SCROLL_SPEED = 8
 OBJECT_FLIPPED_V =      %10000000
 OBJECT_FLIPPED_H =      %01000000
@@ -48,8 +45,8 @@ LIGHTS_OFF = %00000001
     frame_count: .res 1
     background_color: .res 1
     background_palettes: .res 12
-    brightness: .res 1
     sprite_palettes: .res 12
+    brightness: .res 1
     current_page: .res 1
     x_scroll: .res 1
     y_scroll: .res 1
@@ -75,6 +72,8 @@ LIGHTS_OFF = %00000001
     seed: .res 2
     nmi_jump: .res 3
     game_paused: .res 1
+    split_scroll_position = level_flags
+    intro_stage = left_object_index
 
 .bss
     object_ids: .res $10
@@ -95,7 +94,7 @@ LIGHTS_OFF = %00000001
     object_variables_4: .res $10
     object_spawned_flags: .res 32
     object_dead_flags: .res 32
-    tile_buffer_1 = object_spawned_flags
+    tile_buffer_1 = OAMBUFFER
     tile_buffer_2 = tile_buffer_1 + 30
     tile_buffer_3 = tile_buffer_2 + 30
     tile_buffer_4 = tile_buffer_3 + 30
@@ -197,32 +196,6 @@ reset:
     bpl @vblankwait2
 
 main:
-@load_palettes:
-    lda #$32
-    sta sprite_palettes
-    lda #$12
-    sta sprite_palettes + 1
-    lda #$02
-    sta sprite_palettes + 2
-    lda #$34
-    sta sprite_palettes + 3
-    lda #$14
-    sta sprite_palettes + 4
-    lda #$04
-    sta sprite_palettes + 5
-    lda #$36
-    sta sprite_palettes + 6
-    lda #$16
-    sta sprite_palettes + 7
-    lda #$06
-    sta sprite_palettes + 8
-    lda #$39
-    sta sprite_palettes + 9
-    lda #$19
-    sta sprite_palettes + 10
-    lda #$09
-    sta sprite_palettes + 11
-
     ldx #$00 ; Init OAM
     lda #$FF
     :
@@ -257,11 +230,22 @@ main:
 
     jsr init_apu
 
-    update_nmi load_level
+    lda TitleScreenPalette
+    sta background_color
+    ldy #$01
+    :
+    lda TitleScreenPalette, y
+    sta background_palettes - 1, y
+    iny
+    cpy #25
+    bcc :-
+
+    update_nmi intro_setup_nmi
 
     lda #%10101000	; Enable NMI and set sprite size
     sta current_ppu_ctrl
     sta PPUCTRL
+    dec frame_done
 
 forever:
     jmp forever
@@ -294,59 +278,7 @@ rand:
 	sta seed+0
 	rts
 
-normal_nmi:
-    pha ; Save A register
-    lda frame_done
-    bne @after_early_return
-    txa
-    pha
-    tya
-    pha
-    jsr update_audio
-    pla
-    tay
-    pla
-    tax
-    pla
-    rti
-@after_early_return:
-
-@vblank_routine:
-    inc frame_done ; Set back to 0
-    pla ; Restore A register, not really needed
-    lda #$02 ; Push sprites to OAM
-    sta OAMDMA
-
-@push_vram_updates:
-    tsx
-    stx scratch
-    ldx #$FF
-    txs
-    @pop_slide:
-    pla
-    beq @end_pop_slide
-    tax
-    pla
-    sta PPUCTRL
-    bit PPUSTATUS
-    pla
-    sta PPUADDR
-    pla
-    sta PPUADDR
-    @loop:
-    pla
-    sta PPUDATA
-    dex
-    bne @loop
-    jmp @pop_slide
-    @end_pop_slide:
-    ldx scratch
-    txs
-    lda #$00
-    sta $0100
-    sta vram_buffer_index
-
-@push_palettes_to_ppu:
+push_palettes_to_ppu:
     lda #>Colors
     sta scratch + 1
     lda #<Colors
@@ -421,7 +353,7 @@ normal_nmi:
     sta PPUDATA
     lda #$20
     sta PPUDATA
-    jmp @after_update_palettes
+    rts
     :
     .repeat 4, i
     sta PPUDATA
@@ -431,6 +363,60 @@ normal_nmi:
     sta PPUDATA
     .endrepeat
     .endrepeat
+    rts
+
+normal_nmi:
+    pha ; Save A register
+    lda frame_done
+    bne @after_early_return
+    txa
+    pha
+    tya
+    pha
+    jsr update_audio
+    pla
+    tay
+    pla
+    tax
+    pla
+    rti
+@after_early_return:
+
+@vblank_routine:
+    inc frame_done ; Set back to 0
+    pla ; Restore A register, not really needed
+    lda #$02 ; Push sprites to OAM
+    sta OAMDMA
+
+@push_vram_updates:
+    tsx
+    stx scratch
+    ldx #$FF
+    txs
+    @pop_slide:
+    pla
+    beq @end_pop_slide
+    tax
+    pla
+    sta PPUCTRL
+    bit PPUSTATUS
+    pla
+    sta PPUADDR
+    pla
+    sta PPUADDR
+    @loop:
+    pla
+    sta PPUDATA
+    dex
+    bne @loop
+    jmp @pop_slide
+    @end_pop_slide:
+    ldx scratch
+    txs
+    lda #$00
+    sta $0100
+    sta vram_buffer_index
+    jsr push_palettes_to_ppu
 
     @after_update_palettes:
     bit PPUSTATUS ; Set scroll
@@ -447,7 +433,121 @@ normal_nmi:
 
     jsr update_audio
 
-game_logic:
+    ldy game_state
+    lda GameLoopJumpTableHigh, y
+    pha
+    lda GameLoopJumpTableLow, y
+    pha
+    rts
+
+intro_logic:
+    inc frame_count
+    lda intro_stage
+    bne :+
+    lda frame_count
+    cmp #80
+    bcs :+
+    dec frame_done
+    rti
+    :
+    bit PPUSTATUS
+    lda x_scroll
+    sta PPUSCROLL
+    @check_sprite_0_clear:
+    bit PPUSTATUS
+    bvs @check_sprite_0_clear
+    @check_sprite_0:
+    bit PPUSTATUS
+    bvc @check_sprite_0
+    lda level_flags ; Use this byte as the scroll for the bottom half of the screen
+    sta PPUSCROLL
+    lda current_ppu_ctrl
+    and #%11111110
+    sta PPUCTRL
+    inc x_scroll
+    inc x_scroll
+    inc x_scroll
+    inc x_scroll
+    dec level_flags
+    dec level_flags
+    dec level_flags
+    dec level_flags
+    lda x_scroll
+    cmp #$B0
+    bcc :+
+    lda frame_count
+    and #%00000011
+    bne :+
+    inc brightness
+    :
+    lda frame_count
+    cmp #160
+    bcs :+
+    dec frame_done
+    rti
+    :
+    update_nmi title_screen_setup_nmi
+    rti
+
+title_screen_logic:
+    inc frame_count
+    jsr read_controllers
+    lda buttons_pressed
+    and #BUTTON_START
+    beq :+
+    jsr init_apu
+    lda #230
+    sta OAMBUFFER
+    lda #$D5
+    sta OAMBUFFER + 1
+    lda #$00
+    sta OAMBUFFER + 2
+    sta OAMBUFFER + 3
+    sta scratch + 1
+    lda #$04
+    sta scratch + 2
+    sta scratch + 3
+    lda #$0D
+    sta scratch
+    update_nmi wipe_nmi
+    dec frame_done
+    rti
+    :
+    lda frame_count
+    and #%00011111
+    bne @after_handle_text
+    lda #11
+    sta $0100
+    lda #$00 ; Set VRAM address increment to horizontal
+    sta $0101
+    lda #$22
+    sta $0102
+    lda #$CA
+    sta $0103
+    lda frame_count
+    and #%00100000
+    bne @draw_press_start
+    ldy #$11
+    lda #$06
+    :
+    sta $0103, y
+    dey
+    bne :-
+    jmp @after_handle_text
+    @draw_press_start:
+    ldy #$00
+    :
+    lda PressStartString, y
+    beq :+
+    sta $0104, y
+    iny
+    jmp :-
+    :
+    @after_handle_text:
+    dec frame_done
+    rti
+
+gameplay_logic:
     jsr read_controllers
 
     lda game_paused
@@ -879,7 +979,7 @@ wipe_nmi:
     inc scratch
     lda #%00001110
     sta PPUMASK
-    lda #%10100001
+    lda #%10110001
     sta PPUCTRL
     ldy #$0E
     :
@@ -897,20 +997,20 @@ wipe_nmi:
     lda scratch
     cmp #$86
     bcc :+
-    update_nmi normal_nmi
+    update_nmi load_level
     lda #%00010000
     sta NOISEVOLUME
     dec frame_done
     rti
     :
-    lda #%10100000
+    lda #%10110000
     sta PPUCTRL
     lda #%00011110
     sta PPUMASK
     @check_sprite_0:
     bit PPUSTATUS
     bvc @check_sprite_0
-    lda #%10100001
+    lda #%10110001
     sta PPUCTRL
     ldy #$10
     :
@@ -935,6 +1035,193 @@ wipe_nmi:
     lda scratch + 2
     sta NOISELENGTH
 	rti
+
+intro_setup_nmi:
+    inc frame_done
+    lda #%00011001
+    sta current_ppu_ctrl
+    sta PPUCTRL
+    lda current_ppu_mask
+    and #%11100111
+    sta current_ppu_mask
+    sta PPUMASK
+    jsr push_palettes_to_ppu
+    lda #$20
+    sta PPUADDR
+    lda #$00
+    sta PPUADDR
+    lda #$06
+    ldy #$20
+    :
+    ldx #$40
+    :
+    sta PPUDATA
+    dex
+    bne :-
+    dey
+    bne :--
+    lda #$23
+    sta PPUADDR
+    lda #$C0
+    sta PPUADDR
+    lda #$00
+    ldx #$40
+    :
+    sta PPUDATA
+    dex
+    bne :-
+    lda #$27
+    sta PPUADDR
+    lda #$C0
+    sta PPUADDR
+    lda #$00
+    ldx #$40
+    :
+    sta PPUDATA
+    dex
+    bne :-
+    lda #$23
+    sta PPUADDR
+    lda #$EA
+    sta PPUADDR
+    lda #%01010101
+    sta PPUDATA
+    sta PPUDATA
+    sta PPUDATA
+    sta PPUDATA
+    @draw_logo:
+    lda #$21
+    sta PPUADDR
+    lda #$00
+    sta PPUADDR
+    sta OAMBUFFER + 3
+    ldx #$00
+    @draw_logo_loop:
+    lda LogoTileLayout, x
+    beq @after_draw_logo
+    bmi @consecutive_run
+    tay
+    inx
+    lda LogoTileLayout, x
+    inx
+    :
+    sta PPUDATA
+    dey
+    bne :-
+    jmp @draw_logo_loop
+    @consecutive_run:
+    and #%01111111
+    tay
+    inx
+    :
+    lda LogoTileLayout, x
+    sta PPUDATA
+    inx
+    dey
+    bne :-
+    jmp @draw_logo_loop
+    @after_draw_logo:
+    lda #$21
+    sta PPUADDR
+    lda #$A0
+    sta PPUADDR
+    lda #$D4
+    ldx #$20
+    :
+    sta PPUDATA
+    dex
+    bne :-
+    lda #$25
+    sta PPUADDR
+    lda #$A0
+    sta PPUADDR
+    lda #$D4
+    ldx #$20
+    :
+    sta PPUDATA
+    dex
+    bne :-
+    lda current_ppu_ctrl
+    ora #%00000100
+    sta PPUCTRL
+    lda #$21
+    sta PPUADDR
+    lda #$C0
+    sta PPUADDR
+    lda #$D4
+    sta OAMBUFFER + 1
+    ldx #$10
+    :
+    sta PPUDATA
+    dex
+    bne :-
+    ldy #$01
+    jsr play_song
+    ldx #$01
+    lda #103
+    sta OAMBUFFER
+    lda #$01
+    sta OAMBUFFER + 2
+    lda #$00
+    sta x_scroll
+    lda #$FC
+    sta split_scroll_position
+    lda current_ppu_ctrl
+    ora #%10000000
+    sta current_ppu_ctrl
+    sta PPUCTRL
+    lda current_ppu_mask
+    ora #%00011000
+    sta current_ppu_mask
+    update_nmi normal_nmi
+    dec frame_done
+    rti
+
+title_screen_setup_nmi:
+    jsr update_audio
+    lda #%10011001
+    sta current_ppu_ctrl
+    sta PPUCTRL
+    lda current_ppu_mask
+    and #%11100111
+    sta current_ppu_mask
+    sta PPUMASK
+    lda PPUSTATUS
+    lda #$21
+    sta PPUADDR
+    lda #$A1
+    sta PPUADDR
+    lda #$06
+    ldx #$1F
+    :
+    sta PPUDATA
+    dex
+    bne :-
+    lda #$25
+    sta PPUADDR
+    lda #$A0
+    sta PPUADDR
+    lda #$06
+    ldx #$20
+    :
+    sta PPUDATA
+    dex
+    bne :-
+    lda #$00
+    sta x_scroll
+    sta brightness
+    sta frame_count
+    lda current_ppu_ctrl
+    and #%11111110
+    sta current_ppu_ctrl
+    lda current_ppu_mask
+    ora #%00011000
+    sta current_ppu_mask
+    lda #GameState::TITLE_SCREEN
+    sta game_state
+    update_nmi normal_nmi
+    dec frame_done
+    rti
 
 .include "audio_engine.s"
 
@@ -1552,7 +1839,6 @@ load_level:
     sta x_scroll
     sta y_scroll
     jsr player_init
-    jsr pause_audio
     ldx current_level
     lda current_ppu_ctrl
     lda #$20 ; Get ready to update nametable
@@ -1597,6 +1883,31 @@ load_level:
     sta background_palettes + 10
     lda LevelBackgroundPalette3Color2, x
     sta background_palettes + 11
+
+    lda #$32
+    sta sprite_palettes
+    lda #$12
+    sta sprite_palettes + 1
+    lda #$02
+    sta sprite_palettes + 2
+    lda #$34
+    sta sprite_palettes + 3
+    lda #$14
+    sta sprite_palettes + 4
+    lda #$04
+    sta sprite_palettes + 5
+    lda #$36
+    sta sprite_palettes + 6
+    lda #$16
+    sta sprite_palettes + 7
+    lda #$06
+    sta sprite_palettes + 8
+    lda #$39
+    sta sprite_palettes + 9
+    lda #$19
+    sta sprite_palettes + 10
+    lda #$09
+    sta sprite_palettes + 11
 
     lda LevelTilePointersLow, x
     sta scratch
@@ -1894,16 +2205,19 @@ load_level:
     ldy #$01
     jsr play_song
 
+    lda #GameState::GAMEPLAY
+    sta game_state
     update_nmi normal_nmi
     lda current_ppu_mask
     ora #%00011000 ; Turn rendering back on at next NMI
     sta current_ppu_mask
     lda PPUSTATUS
     lda current_ppu_ctrl
-    ora #%10000000 ; Turn NMI back on
+    ora #%10100000 ; Turn NMI back on
+    and #%11101111
     sta current_ppu_ctrl
     sta PPUCTRL
-    jmp game_logic
+    jmp gameplay_logic
 
 ; Page in 10, X position in 11, Y position in 12
 ; Clobbers A, X, Y, 9, 13, 14, 15
@@ -2437,22 +2751,6 @@ crash_handler:
     lda #$00
     sta OAMADDR
 
-    lda PPUSTATUS ; Clear VRAM
-    lda #$20
-    sta PPUADDR
-    lda #$00
-    sta PPUADDR
-    lda #$06
-    ldy #$08
-    :
-    ldx #$00
-    :
-    sta PPUDATA
-    dex
-    bne :-
-    dey
-    bne :--
-
     lda #$23
     sta PPUADDR
     lda #$C0
@@ -2619,45 +2917,6 @@ print_hex:
     and #$0F
     adc #$DC
     sta PPUDATA
-    rts
-
-draw_logo:
-    lda current_ppu_ctrl
-    and #%11111011
-    ora #%00010000
-    sta current_ppu_ctrl
-    sta PPUCTRL
-    lda PPUSTATUS
-    lda #$21
-    sta PPUADDR
-    lda #$00
-    sta PPUADDR
-    ldx #$00
-    @loop:
-    lda LogoTileLayout, x
-    beq @after_draw_logo
-    bmi @consecutive_run
-    tay
-    inx
-    lda LogoTileLayout, x
-    inx
-    :
-    sta PPUDATA
-    dey
-    bne :-
-    jmp @loop
-    @consecutive_run:
-    and #%01111111
-    tay
-    inx
-    :
-    lda LogoTileLayout, x
-    sta PPUDATA
-    inx
-    dey
-    bne :-
-    jmp @loop
-    @after_draw_logo:
     rts
 
 .include "light_switch.s"
@@ -3747,6 +4006,26 @@ Level1ObjectList:
     .byte LIGHT_SWITCH_OBJECT, $08, $54, $D0
     .byte $00, $00, $00, $00 ; Terminator
 
+TitleScreenPalette:
+    .byte $0F, $3C, $2C, $0F, $20, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+
+.enum GameState
+    INTRO
+    TITLE_SCREEN
+    GAMEPLAY
+.endenum
+
+.define GameLoopJumpTable \
+    intro_logic - 1, \
+    title_screen_logic - 1, \
+    gameplay_logic - 1
+
+GameLoopJumpTableLow:
+    .lobytes GameLoopJumpTable
+
+GameLoopJumpTableHigh:
+    .hibytes GameLoopJumpTable
+
 .include "song_list.s"
 .include "title_theme.s"
 .include "silence_song.s"
@@ -3766,6 +4045,9 @@ CrashMessage:
 
 PauseString:
     asciizoffset "PAUSED", $A5
+
+PressStartString:
+    asciizoffset "PRESS START", $A5
 
 LogoTileLayout:
     .byte $03, $06, $81, $D9, $03, $D5, $87, $DB, $D9, $DB, $06, $D9, $DB, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $81, $DB, $06, $06, $82, $D8, $DA, $03, $06, $91, $D8, $DA, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $D8, $DA, $0A, $06, $82, $D9, $DB, $03, $06, $81, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $87, $DB, $D9, $DB, $06, $D9, $DB, $D9, $03, $D5, $81, $DB, $06, $06, $82, $D8, $DA, $03, $06, $8F, $D8, $DA, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $03, $06, $82, $D8, $DA, $07, $06, $81, $D9, $03, $D5, $8C, $DB, $D9, $DB, $06, $D9, $DB, $D9, $DB, $06, $D9, $DB, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $81, $DB, $06, $06, $20, $D4, $0C, $06, $82, $D8, $DA, $03, $06, $81, $D8, $03, $D5, $81, $D8, $03, $D5, $82, $DB, $D9, $03, $D5, $81, $DB, $0D, $06, $82, $D9, $DB, $03, $06, $8D, $D9, $DB, $06, $D5, $D7, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $0D, $06, $82, $D8, $DA, $03, $06, $82, $D8, $DA, $02, $06, $81, $D5, $02, $06, $83, $D9, $DB, $D9, $03, $D5, $81, $DB, $0D, $06, $82, $D9, $DB, $03, $06, $8A, $D9, $DB, $06, $D6, $D5, $06, $D8, $DA, $D8, $DA, $10, $06, $81, $D8, $03, $D5, $82, $DA, $D8, $03, $D5, $81, $DB, $03, $D5, $83, $DB, $D9, $DB, $06, $06
