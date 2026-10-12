@@ -1128,7 +1128,7 @@ intro_setup_nmi:
 	bne :-
 	jmp @draw_logo_loop
     @after_draw_logo:
-    lda #$00
+    lda #$FF
     ldy #$00
     :
     sta OAMBUFFER, y
