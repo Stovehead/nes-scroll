@@ -2751,6 +2751,21 @@ crash_handler:
     lda #$00
     sta OAMADDR
 
+    lda #$20
+    sta PPUADDR
+    lda #$00
+    sta PPUADDR
+    lda #$06
+    ldy #$08
+    :
+    ldx #$00
+    :
+    sta PPUDATA
+    dex
+    bne :-
+    dey
+    bne :--
+
     lda #$23
     sta PPUADDR
     lda #$C0
