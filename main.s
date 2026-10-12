@@ -1094,33 +1094,46 @@ intro_setup_nmi:
     sta PPUADDR
     lda #$00
     sta PPUADDR
-    sta OAMBUFFER + 3
-    ldx #$00
+    ldy #$00
+	ldx #$00
     @draw_logo_loop:
-    lda LogoTileLayout, x
-    beq @after_draw_logo
-    bmi @consecutive_run
-    tay
-    inx
-    lda LogoTileLayout, x
-    inx
+	lda LogoTileLayout, y
+	sta scratch
+	bmi @lit
+	beq @after_draw_logo
+	iny
+	lda LogoTileLayout, y
+	sty scratch + 1
+	tay
     :
-    sta PPUDATA
-    dey
-    bne :-
-    jmp @draw_logo_loop
-    @consecutive_run:
-    and #%01111111
-    tay
-    inx
+	lda OAMBUFFER, y
+	sta OAMBUFFER, x
+	sta PPUDATA
+	iny
+	inx
+	dec scratch
+	bpl :-
+	ldy scratch + 1
+	iny
+	jmp @draw_logo_loop
+    @lit:
+	iny
     :
-    lda LogoTileLayout, x
-    sta PPUDATA
-    inx
-    dey
-    bne :-
-    jmp @draw_logo_loop
+	lda LogoTileLayout, y
+	sta OAMBUFFER,x
+	sta PPUDATA
+	iny
+	inx
+	inc scratch
+	bne :-
+	jmp @draw_logo_loop
     @after_draw_logo:
+    lda #$00
+    ldy #$00
+    :
+    sta OAMBUFFER, y
+    dey
+    bne :-
     lda #$21
     sta PPUADDR
     lda #$A0
@@ -1163,6 +1176,7 @@ intro_setup_nmi:
     lda #$01
     sta OAMBUFFER + 2
     lda #$00
+    sta OAMBUFFER + 3
     sta x_scroll
     lda #$FC
     sta split_scroll_position
@@ -4065,8 +4079,47 @@ PressStartString:
     asciizoffset "PRESS START", $A5
 
 LogoTileLayout:
-    .byte $03, $06, $81, $D9, $03, $D5, $87, $DB, $D9, $DB, $06, $D9, $DB, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $81, $DB, $06, $06, $82, $D8, $DA, $03, $06, $91, $D8, $DA, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $D8, $DA, $0A, $06, $82, $D9, $DB, $03, $06, $81, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $87, $DB, $D9, $DB, $06, $D9, $DB, $D9, $03, $D5, $81, $DB, $06, $06, $82, $D8, $DA, $03, $06, $8F, $D8, $DA, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $03, $06, $82, $D8, $DA, $07, $06, $81, $D9, $03, $D5, $8C, $DB, $D9, $DB, $06, $D9, $DB, $D9, $DB, $06, $D9, $DB, $D9, $03, $D5, $82, $DB, $D9, $03, $D5, $81, $DB, $06, $06, $20, $D4, $0C, $06, $82, $D8, $DA, $03, $06, $81, $D8, $03, $D5, $81, $D8, $03, $D5, $82, $DB, $D9, $03, $D5, $81, $DB, $0D, $06, $82, $D9, $DB, $03, $06, $8D, $D9, $DB, $06, $D5, $D7, $06, $D8, $DA, $D8, $DA, $06, $D8, $DA, $0D, $06, $82, $D8, $DA, $03, $06, $82, $D8, $DA, $02, $06, $81, $D5, $02, $06, $83, $D9, $DB, $D9, $03, $D5, $81, $DB, $0D, $06, $82, $D9, $DB, $03, $06, $8A, $D9, $DB, $06, $D6, $D5, $06, $D8, $DA, $D8, $DA, $10, $06, $81, $D8, $03, $D5, $82, $DA, $D8, $03, $D5, $81, $DB, $03, $D5, $83, $DB, $D9, $DB, $06, $06
-    .byte $00
+	.byte $f3, $06, $06, $06, $d9, $d5, $d5, $d5, $db, $d9, $db, $06, $d9, $db ; 13 literals
+	.byte $05, $03 ; 6 backrefs
+	.byte $08, $0e ; 9 backrefs
+	.byte $02, $00 ; 3 backrefs
+	.byte $02, $1e ; 3 backrefs
+	.byte $fe, $d8, $da ; 2 literals
+	.byte $05, $1f ; 6 backrefs
+	.byte $fe, $d8, $da ; 2 literals
+	.byte $0c, $27 ; 13 backrefs
+	.byte $08, $38 ; 9 backrefs
+	.byte $02, $08 ; 3 backrefs
+	.byte $07, $01 ; 8 backrefs
+	.byte $0d, $04 ; 14 backrefs
+	.byte $19, $1c ; 26 backrefs
+	.byte $07, $5e ; 8 backrefs
+	.byte $04, $3e ; 5 backrefs
+	.byte $09, $4d ; 10 backrefs
+	.byte $0d, $09 ; 14 backrefs
+	.byte $09, $38 ; 10 backrefs
+	.byte $27, $a3 ; 40 backrefs
+	.byte $05, $73 ; 6 backrefs
+	.byte $02, $96 ; 3 backrefs
+	.byte $03, $d1 ; 4 backrefs
+	.byte $12, $94 ; 19 backrefs
+	.byte $05, $42 ; 6 backrefs
+	.byte $fc, $db, $06, $d5, $d7 ; 4 literals
+	.byte $0a, $6d ; 11 backrefs
+	.byte $0f, $c2 ; 16 backrefs
+	.byte $02, $0c ; 3 backrefs
+	.byte $ff, $d5 ; 1 literal
+	.byte $03, $ef ; 4 backrefs
+	.byte $19, $da ; 26 backrefs
+	.byte $fe, $d6, $d5 ; 2 literals
+	.byte $05, $f6 ; 6 backrefs
+	.byte $0f, $bd ; 16 backrefs
+	.byte $02, $1a ; 3 backrefs
+	.byte $ff, $da ; 1 literal
+	.byte $04, $d5 ; 5 backrefs
+	.byte $06, $82 ; 7 backrefs
+	.byte $04, $5a ; 5 backrefs
+	.byte $00 ; terminator
 
 .segment "CHARS"
     .incbin "bg.bin"
