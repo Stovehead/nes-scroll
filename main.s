@@ -203,30 +203,13 @@ main:
     inx
     bne :-
 
+    dec seed
+
     lda #$00 ; Is this necessary?
     sta OAMADDR
 
-    lda PPUSTATUS ; Clear VRAM
-    lda #$20
-    sta PPUADDR
-    lda #$00
-    sta PPUADDR
-    ldy #$08
-    :
-    ldx #$00
-    :
-    sta PPUDATA
-    dex
-    bne :-
-    dey
-    bne :--
-
     lda #%00011110  ; Enable rendering
     sta current_ppu_mask
-
-    lda #$02
-    ldx #$00
-    jsr spawn_object_without_spawn_flag
 
     jsr init_apu
 
@@ -244,6 +227,7 @@ main:
 
     lda #%10101000	; Enable NMI and set sprite size
     sta current_ppu_ctrl
+    bit PPUSTATUS
     sta PPUCTRL
     dec frame_done
 
@@ -330,8 +314,8 @@ push_palettes_to_ppu:
     lda current_ppu_ctrl
     and #%11111011 ; Set PPU increment to right
     sta current_ppu_ctrl
+    bit PPUSTATUS
     sta PPUCTRL
-    lda PPUSTATUS
     lda #$3F
     sta PPUADDR
     lda #$01
@@ -398,8 +382,8 @@ normal_nmi:
     beq @end_pop_slide
     tax
     pla
-    sta PPUCTRL
     bit PPUSTATUS
+    sta PPUCTRL
     pla
     sta PPUADDR
     pla
@@ -453,6 +437,7 @@ intro_logic:
     bit PPUSTATUS
     lda x_scroll
     sta PPUSCROLL
+    jsr rand
     @check_sprite_0_clear:
     bit PPUSTATUS
     bvs @check_sprite_0_clear
@@ -496,13 +481,7 @@ title_screen_logic:
     and #BUTTON_START
     beq :+
     jsr init_apu
-    lda #230
-    sta OAMBUFFER
-    lda #$D5
-    sta OAMBUFFER + 1
     lda #$00
-    sta OAMBUFFER + 2
-    sta OAMBUFFER + 3
     sta scratch + 1
     lda #$04
     sta scratch + 2
@@ -510,7 +489,6 @@ title_screen_logic:
     lda #$0D
     sta scratch
     update_nmi wipe_nmi
-    dec frame_done
     rti
     :
     lda frame_count
@@ -544,6 +522,45 @@ title_screen_logic:
     jmp :-
     :
     @after_handle_text:
+    ldy #$04
+    ldx #$00
+    @draw_star_loop:
+    txa
+    lsr
+    lda object_y_positions, x
+    sbc object_variables_0, x
+    sbc #$02
+    sta object_y_positions, x
+    sta OAMBUFFER, y
+    iny
+    inc object_variables_1, x
+    lda object_variables_1, x
+    asl
+    asl
+    asl
+    asl
+    bcc :+
+    lda #$D1
+    jmp @after_determine_star_sprite
+    :
+    lda #$D3
+    @after_determine_star_sprite:
+    sta OAMBUFFER, y
+    iny
+    lda object_variables_1, x
+    and #%00011000
+    lsr
+    lsr
+    lsr
+    ora #%00100000
+    sta OAMBUFFER, y
+    iny
+    lda object_x_positions, x
+    sta OAMBUFFER, y
+    iny
+    inx
+    cpx #$10
+    bcc @draw_star_loop
     dec frame_done
     rti
 
@@ -632,7 +649,8 @@ gameplay_logic:
     lda #$00
     :
     sta current_level
-    jmp load_level
+    update_nmi load_level
+    rti
     :
 
     lda buttons_pressed
@@ -1000,7 +1018,6 @@ wipe_nmi:
     update_nmi load_level
     lda #%00010000
     sta NOISEVOLUME
-    dec frame_done
     rti
     :
     lda #%10110000
@@ -1051,7 +1068,21 @@ intro_setup_nmi:
     lda #$00
     sta PPUADDR
     lda #$06
-    ldy #$20
+    ldy #$0F
+    :
+    ldx #$40
+    :
+    sta PPUDATA
+    dex
+    bne :-
+    dey
+    bne :--
+    lda #$24
+    sta PPUADDR
+    lda #$00
+    sta PPUADDR
+    lda #$D4
+    ldy #$0F
     :
     ldx #$40
     :
@@ -1074,7 +1105,7 @@ intro_setup_nmi:
     sta PPUADDR
     lda #$C0
     sta PPUADDR
-    lda #$00
+    lda #$55
     ldx #$40
     :
     sta PPUDATA
@@ -1134,36 +1165,16 @@ intro_setup_nmi:
     sta OAMBUFFER, y
     dey
     bne :-
-    lda #$21
-    sta PPUADDR
-    lda #$A0
-    sta PPUADDR
-    lda #$D4
-    ldx #$20
-    :
-    sta PPUDATA
-    dex
-    bne :-
-    lda #$25
-    sta PPUADDR
-    lda #$A0
-    sta PPUADDR
-    lda #$D4
-    ldx #$20
-    :
-    sta PPUDATA
-    dex
-    bne :-
     lda current_ppu_ctrl
     ora #%00000100
     sta PPUCTRL
     lda #$21
     sta PPUADDR
-    lda #$C0
+    lda #$A0
     sta PPUADDR
     lda #$D4
     sta OAMBUFFER + 1
-    ldx #$10
+    ldx #$11
     :
     sta PPUDATA
     dex
@@ -1183,6 +1194,7 @@ intro_setup_nmi:
     lda current_ppu_ctrl
     ora #%10000000
     sta current_ppu_ctrl
+    bit PPUSTATUS
     sta PPUCTRL
     lda current_ppu_mask
     ora #%00011000
@@ -1195,38 +1207,63 @@ title_screen_setup_nmi:
     jsr update_audio
     lda #%10011001
     sta current_ppu_ctrl
+    bit PPUSTATUS
     sta PPUCTRL
     lda current_ppu_mask
     and #%11100111
     sta current_ppu_mask
     sta PPUMASK
-    lda PPUSTATUS
-    lda #$21
-    sta PPUADDR
-    lda #$A1
-    sta PPUADDR
     lda #$06
-    ldx #$1F
-    :
-    sta PPUDATA
-    dex
-    bne :-
-    lda #$25
-    sta PPUADDR
-    lda #$A0
-    sta PPUADDR
-    lda #$06
-    ldx #$20
-    :
-    sta PPUDATA
-    dex
-    bne :-
+    sta background_palettes + 5
     lda #$00
     sta x_scroll
     sta brightness
     sta frame_count
+    sta OAMBUFFER + 2
+    sta OAMBUFFER + 3
+    lda #238
+    sta OAMBUFFER
+    lda #$D5
+    sta OAMBUFFER + 1
+    lda #$08
+    ldx #$00
+    clc
+    :
+    sta object_x_positions, x
+    adc #$10
+    inx
+    cpx #$10
+    bcc :-
+    lda seed
+    sta scratch
+    lda seed + 1
+    sta scratch
+    ldx #$00
+    :
+    lsr scratch
+    ror scratch + 1
+    lda #$00
+    adc #$00
+    sta object_variables_0, x
+    inx
+    cpx #$10
+    bcc :-
+    ldx #$00
+    :
+    jsr rand
+    lda seed
+    sta object_y_positions, x
+    lda seed + 1
+    sta object_variables_1, x
+    inx
+    cpx #$10
+    bcc :-
+    lda #BUTTON_START
+    sta controller_input_prev
+    sta controller_input
     lda current_ppu_ctrl
     and #%11111110
+    ora #%00100000
     sta current_ppu_ctrl
     lda current_ppu_mask
     ora #%00011000
@@ -1234,8 +1271,7 @@ title_screen_setup_nmi:
     lda #GameState::TITLE_SCREEN
     sta game_state
     update_nmi normal_nmi
-    dec frame_done
-    rti
+    jmp title_screen_logic
 
 .include "audio_engine.s"
 
@@ -1852,7 +1888,9 @@ load_level:
     sta current_page ; Reset scroll-related variables
     sta x_scroll
     sta y_scroll
-    jsr player_init
+    lda #PLAYER_OBJECT
+    ldx #$00
+    jsr spawn_object_without_spawn_flag
     ldx current_level
     lda current_ppu_ctrl
     lda #$20 ; Get ready to update nametable
@@ -2230,6 +2268,7 @@ load_level:
     ora #%10100000 ; Turn NMI back on
     and #%11101111
     sta current_ppu_ctrl
+    bit PPUSTATUS
     sta PPUCTRL
     jmp gameplay_logic
 
@@ -4036,7 +4075,7 @@ Level1ObjectList:
     .byte $00, $00, $00, $00 ; Terminator
 
 TitleScreenPalette:
-    .byte $0F, $3C, $2C, $0F, $20, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+    .byte $0F, $3C, $2C, $0F, $20, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $31, $11, $0F, $33, $13, $0F, $35, $15, $0F, $37, $17, $0F
 
 .enum GameState
     INTRO
