@@ -5,12 +5,16 @@
     LANDING
     POWER_OFF
     POWER_ON
+    HURT
+    SHOCKED
 .endenum
 
 .define SoundEffectPointers \
     SfxLanding, \
     SfxPowerOff, \
-    SfxPowerOn
+    SfxPowerOn, \
+    SfxHurt, \
+    SfxShocked
 
 SoundEffectPointersLow:
     .lobytes SoundEffectPointers
@@ -77,6 +81,26 @@ SfxPowerOn:
     .byte PLAY_NOTE, Note::G2, 1
     .byte PLAY_NOTE, Note::Af2, 1
     .byte PLAY_NOTE, Note::A2, 1
+    .byte END_SFX
+
+SfxHurt:
+    .byte SET_VOLUME, %00000111
+    .byte SET_SEPARATION, $00
+    .byte PLAY_NOTE, 11, 2
+    .byte PLAY_NOTE, 9, 2
+    .byte PLAY_NOTE, 11, 2
+    .byte PLAY_NOTE, 9, 2
+    .byte END_SFX
+
+SfxShocked:
+    .byte SET_VOLUME, %00000111
+    .byte SET_SEPARATION, $00
+    .byte PLAY_NOTE, 128 + 9, 4
+    .byte PLAY_NOTE, 11, 1
+    .byte PLAY_NOTE, 128 + 9, 4
+    .byte PLAY_NOTE, 11, 1
+    .byte PLAY_NOTE, 128 + 9, 4
+    .byte PLAY_NOTE, 11, 1
     .byte END_SFX
 
 .popseg

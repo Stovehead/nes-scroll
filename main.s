@@ -223,8 +223,16 @@ main:
     cpy #25
     bcc :-
 
-    update_nmi intro_setup_nmi
+    jsr read_controllers
+    lda controller_input
+    and #BUTTON_START
+    beq :+
+    update_nmi load_level
+    jmp :++
+    :
 
+    update_nmi intro_setup_nmi
+    :
     lda #%10101000	; Enable NMI and set sprite size
     sta current_ppu_ctrl
     bit PPUSTATUS
@@ -656,13 +664,16 @@ gameplay_logic:
     lda buttons_pressed
     and #BUTTON_DOWN
     beq :+
-    dec brightness
+    ldy #SFX::HURT
+    ldx #$06
+    jsr play_sound_effect
     jmp :++
     :
     lda buttons_pressed
     and #BUTTON_UP
     beq :+
-    inc brightness
+    ldy #$02
+    jsr play_song
     :
 
     lda frame_count ; Shuffle palette for computer level
@@ -4097,6 +4108,7 @@ GameLoopJumpTableHigh:
 .include "song_list.s"
 .include "title_theme.s"
 .include "silence_song.s"
+.include "death_sound.s"
 .include "sound_effects.s"
 
 .macro asciizoffset Str, Off

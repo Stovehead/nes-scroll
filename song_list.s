@@ -2,11 +2,12 @@
 .segment "RODATA"
 
 NumSongs:
-    .byte $02
+    .byte $03
 
 .define SongPulse1Pointers \
     SilenceSongPulse1, \
-    TitleThemePulse1
+    TitleThemePulse1, \
+    DeathSoundPulse1
 
 SongPulse1PointersLow:
     .lobytes SongPulse1Pointers
@@ -16,7 +17,8 @@ SongPulse1PointersHigh:
 
 .define SongPulse2Pointers \
     SilenceSongPulse2, \
-    TitleThemePulse2
+    TitleThemePulse2, \
+    DeathSoundPulse2
 
 SongPulse2PointersLow:
     .lobytes SongPulse2Pointers
@@ -26,7 +28,8 @@ SongPulse2PointersHigh:
 
 .define SongTrianglePointers \
     SilenceSongTriangle, \
-    TitleThemeTriangle
+    TitleThemeTriangle, \
+    DeathSoundTriangle
 
 SongTrianglePointersLow:
     .lobytes SongTrianglePointers
@@ -36,7 +39,8 @@ SongTrianglePointersHigh:
 
 .define SongNoisePointers \
     SilenceSongNoise, \
-    TitleThemeNoise
+    TitleThemeNoise, \
+    DeathSoundNoise
 
 SongNoisePointersLow:
     .lobytes SongNoisePointers
