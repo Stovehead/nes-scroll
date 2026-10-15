@@ -72,6 +72,7 @@ LIGHTS_OFF = %00000001
     seed: .res 2
     nmi_jump: .res 3
     game_paused: .res 1
+    player_hp: .res 1
     split_scroll_position = level_flags
     intro_stage = left_object_index
 
@@ -662,18 +663,9 @@ gameplay_logic:
     :
 
     lda buttons_pressed
-    and #BUTTON_DOWN
-    beq :+
-    ldy #SFX::HURT
-    ldx #$06
-    jsr play_sound_effect
-    jmp :++
-    :
-    lda buttons_pressed
     and #BUTTON_UP
     beq :+
-    ldy #$02
-    jsr play_song
+    inc player_hp
     :
 
     lda frame_count ; Shuffle palette for computer level
@@ -749,26 +741,60 @@ gameplay_logic:
     jsr spawn_objects_after_scroll
 
     ; Build sprites
+    ldx #$00
+    ldy player_hp
+    beq @after_build_health_bar
+    ldx #$04
     lda #$10
     sta OAMBUFFER
     sta OAMBUFFER + 3
-    sta OAMBUFFER + 7
-    sta OAMBUFFER + 11
-    lda #$21
-    sta OAMBUFFER + 1
-    sta OAMBUFFER + 5
-    sta OAMBUFFER + 9
     lda #$02
     sta OAMBUFFER + 2
-    sta OAMBUFFER + 6
-    sta OAMBUFFER + 10
+    cpy #$01
+    bne :+
+    lda #$23
+    sta OAMBUFFER + 1
+    jmp @after_build_health_bar
+    :
+    lda #$21
+    sta OAMBUFFER + 1
+    cpy #$02
+    beq @after_build_health_bar
+    ldx #$08
     lda #$20
     sta OAMBUFFER + 4
+    lda #$02
+    sta OAMBUFFER + 6
+    lda #$10
+    sta OAMBUFFER + 7
+    cpy #$03
+    bne :+
+    lda #$23
+    sta OAMBUFFER + 5
+    jmp @after_build_health_bar
+    :
+    lda #$21
+    sta OAMBUFFER + 5
+    cpy #$04
+    beq @after_build_health_bar
+    ldx #$0C
     lda #$30
     sta OAMBUFFER + 8
-    lda #12
-    sta oam_offset ; Number of bytes in OAM we've used so far
-    sta scratch + 2 ; Flag for if we've made any sprites
+    lda #$02
+    sta OAMBUFFER + 10
+    lda #$10
+    sta OAMBUFFER + 11
+    cpy #$05
+    bne :+
+    lda #$23
+    sta OAMBUFFER + 9
+    jmp @after_build_health_bar
+    :
+    lda #$21
+    sta OAMBUFFER + 9
+    @after_build_health_bar:
+    stx oam_offset ; Number of bytes in OAM we've used so far
+    stx scratch + 2 ; Flag for if we've made any sprites
     ldx #$00
     jsr build_sprite
     lda frame_count
@@ -3055,11 +3081,35 @@ ObjectHitboxHeights:
     .byte 11 ; Player
     .byte 48 ; Electric gate
 
+.enum MetaSprite
+    Test0
+    Test1
+    PlayerIdle
+    PlayerWalk0
+    PlayerWalk1
+    PlayerJump
+    PlayerHurt
+    LightSwitch0
+    LightSwitch1
+    LightSwitch2
+    LightSwitch3
+    LightSwitch4
+    ElectricGateOff
+    ElectricGateOn0
+    ElectricGateOn1
+    ElectricGateOn2
+    ElectricGateOn3
+    ElectricGateOn4
+    ElectricGateOn5
+    ElectricGateOn6
+    ElectricGateOn7
+.endenum
+
 ; Sprite layout structure:
 ; 1 byte for the number of sprites, 1 byte for width in pixels, 1 byte for height in pixels
 ; For each sprite, 1 byte for index, 1 byte for x offset, 1 byte for y offset, and 1 byte for attributes
 NumMetaSprites:
-    .byte 20
+    .byte 21
 .define MetaSpritePointers \
     TestMetaSprite0, \
     TestMetaSprite1, \
@@ -3067,6 +3117,7 @@ NumMetaSprites:
     PlayerWalkSprite0, \
     PlayerWalkSprite1, \
     PlayerJumpSprite, \
+    PlayerHurtSprite, \
     LightSwitchSprite0, \
     LightSwitchSprite1, \
     LightSwitchSprite2, \
@@ -3192,6 +3243,21 @@ PlayerJumpSprite:
     .byte %00000000 ; Attributes
 
     .byte $1F       ; Index
+    .byte $08       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+
+PlayerHurtSprite:
+    .byte $02 ; Num sprites
+    .byte $10 ; Width
+    .byte $10 ; Height
+
+    .byte $25       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $27       ; Index
     .byte $08       ; X offset
     .byte $00       ; Y offset
     .byte %00000000 ; Attributes
@@ -3591,20 +3657,24 @@ ElectricGateOn7:
     .byte $20       ; Y offset
     .byte %11000000 ; Attributes
 
-ANIM_PLAYER_IDLE = 0
-ANIM_PLAYER_WALK = 1
-ANIM_PLAYER_JUMP = 2
-ANIM_LIGHT_SWITCH_DOWN = 3
-ANIM_LIGHT_SWITCH_UP = 4
-ANIM_ELECTRIC_GATE_OFF = 5
-ANIM_ELECTRIC_GATE_ON = 6
+.enum
+    ANIM_PLAYER_IDLE
+    ANIM_PLAYER_WALK
+    ANIM_PLAYER_JUMP
+    ANIM_PLAYER_HURT
+    ANIM_LIGHT_SWITCH_DOWN
+    ANIM_LIGHT_SWITCH_UP
+    ANIM_ELECTRIC_GATE_OFF
+    ANIM_ELECTRIC_GATE_ON
+.endenum
 
 NumAnimations:
-    .byte $07
+    .byte $08
 .define AnimationFramePointers \
     AnimPlayerIdleFrames, \
     AnimPlayerWalkFrames, \
     AnimPlayerJumpFrames, \
+    AnimPlayerHurtFrames, \
     AnimLightSwitchDownFrames, \
     AnimLightSwitchUpFrames, \
     AnimElectricGateOffFrames, \
@@ -3618,6 +3688,7 @@ AnimationFramePointersHigh:
     AnimPlayerIdleLengths, \
     AnimPlayerWalkLengths, \
     AnimPlayerJumpLengths, \
+    AnimPlayerHurtLengths, \
     AnimLightSwitchDownLengths, \
     AnimLightSwitchUpLengths, \
     AnimElectricGateOffLengths, \
@@ -3629,46 +3700,60 @@ AnimationFrameLengthPointersHigh:
 
 ; Highest bit determines whether animation loops or not
 AnimationLengths:
-    .byte 1, 128 + 4, 2, 5, 5, 1, 128 + 8
+    .byte 1         ; Player idle
+    .byte 128 + 4   ; Player walk
+    .byte 2         ; Player jump
+    .byte 1         ; Player hurt
+    .byte 5         ; Light switch down
+    .byte 5         ; Light switch up
+    .byte 1         ; Electric gate off
+    .byte 128 + 8   ; Electric gate on
 
 AnimPlayerIdleFrames:
-    .byte ANIM_PLAYER_IDLE_FRAME
+    .byte MetaSprite::PlayerIdle
 
 AnimPlayerIdleLengths:
-    .byte ANIM_PLAYER_IDLE_LENGTH
+    .byte $FF
 
 AnimPlayerWalkFrames:
-    .byte $03, $02, $04, $02
+    .byte MetaSprite::PlayerWalk0, MetaSprite::PlayerIdle, MetaSprite::PlayerWalk1, MetaSprite::PlayerIdle
 
 AnimPlayerWalkLengths:
     .byte $08, $08, $08, $08
 
 AnimPlayerJumpFrames:
-    .byte ANIM_PLAYER_IDLE_FRAME, $05
+    .byte MetaSprite::PlayerWalk0, MetaSprite::PlayerJump
 
 AnimPlayerJumpLengths:
     .byte $01, $00
 
+AnimPlayerHurtFrames:
+    .byte MetaSprite::PlayerHurt
+
+AnimPlayerHurtLengths:
+    .byte $FF
+
 AnimLightSwitchDownFrames:
-    .byte ANIM_LIGHT_SWITCH_DOWN_FRAME_0, $07, $08, $09, ANIM_LIGHT_SWITCH_UP_FRAME_0
+    .byte MetaSprite::LightSwitch0, MetaSprite::LightSwitch1, MetaSprite::LightSwitch2, MetaSprite::LightSwitch3, MetaSprite::LightSwitch4
 
 AnimLightSwitchDownLengths:
     .byte $03, $03, $03, $03, $03
 
 AnimLightSwitchUpFrames:
-    .byte ANIM_LIGHT_SWITCH_UP_FRAME_0, $09, $08, $07, $06
+    .byte MetaSprite::LightSwitch4, MetaSprite::LightSwitch3, MetaSprite::LightSwitch2, MetaSprite::LightSwitch1, MetaSprite::LightSwitch0
 
 AnimLightSwitchUpLengths:
     .byte $03, $03, $03, $03, $03
 
 AnimElectricGateOffFrames:
-    .byte $0B
+    .byte MetaSprite::ElectricGateOff
 
 AnimElectricGateOffLengths:
     .byte $00
 
 AnimElectricGateOnFrames:
-    .byte $0C, $0D, $0E, $0F, $10, $11, $12, $13
+    .byte MetaSprite::ElectricGateOn0, MetaSprite::ElectricGateOn1, MetaSprite::ElectricGateOn2, MetaSprite::ElectricGateOn3 
+    .byte MetaSprite::ElectricGateOn4, MetaSprite::ElectricGateOn5, MetaSprite::ElectricGateOn6, MetaSprite::ElectricGateOn7
 
 AnimElectricGateOnLengths:
     .byte $02, $02, $02, $02, $02, $02, $02, $02

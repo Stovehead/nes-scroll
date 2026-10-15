@@ -1,6 +1,3 @@
-ANIM_LIGHT_SWITCH_DOWN_FRAME_0 = $06
-ANIM_LIGHT_SWITCH_UP_FRAME_0 = $0A
-
 ; Object index in X
 light_switch_init:
     lda #$00
@@ -10,12 +7,10 @@ light_switch_init:
     lda level_flags
     and #LIGHTS_OFF
     beq :+
-    lda #ANIM_LIGHT_SWITCH_UP_FRAME_0
+    lda #MetaSprite::LightSwitch4
     jmp :++
     :
-    .if ANIM_LIGHT_SWITCH_UP_FRAME_0 <> 0
-    lda #ANIM_LIGHT_SWITCH_DOWN_FRAME_0
-    .endif
+    lda #MetaSprite::LightSwitch0
     :
     sta object_current_metasprites, x
     rts

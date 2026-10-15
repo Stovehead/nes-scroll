@@ -5,11 +5,11 @@ electric_gate_init:
     lda level_flags
     and #LIGHTS_OFF
     beq :+
-    ldy #$05
+    ldy #ANIM_ELECTRIC_GATE_OFF
     lda #$00
     jmp :++
     :
-    ldy #$06
+    ldy #ANIM_ELECTRIC_GATE_ON
     lda #LIGHTS_OFF
     :
     sta electric_gate_enabled, x
@@ -34,10 +34,10 @@ electric_gate_step:
     and #LIGHTS_OFF
     sta electric_gate_enabled, x
     beq :+
-    lda #$05
+    lda #ANIM_ELECTRIC_GATE_OFF
     jmp :++
     :
-    lda #$06
+    lda #ANIM_ELECTRIC_GATE_ON
     :
     sta object_animations_ids, x
     tay

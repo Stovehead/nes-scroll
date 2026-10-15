@@ -1,5 +1,3 @@
-ANIM_PLAYER_IDLE_FRAME = $02
-ANIM_PLAYER_IDLE_LENGTH = $FF
 
 ; Object index in X
 player_init:
@@ -20,14 +18,12 @@ player_init:
     sta object_variables_1, x
     sta object_variables_3, x
     sta object_variables_4, x
-    .if ANIM_PLAYER_IDLE_FRAME <> 0
-    lda #ANIM_PLAYER_IDLE_FRAME
-    .endif
+    lda #MetaSprite::PlayerIdle
     sta object_current_metasprites, x
-    .if ANIM_PLAYER_IDLE_LENGTH <> ANIM_PLAYER_IDLE_FRAME
-    lda #ANIM_PLAYER_IDLE_LENGTH
-    .endif
+    lda #$FF
     sta object_animation_timers, x
+    lda #$06
+    sta player_hp
     rts
 
 .macro get_collision_at_point XOffset, YOffset
@@ -79,6 +75,12 @@ player_on_hit_ground:
     lda #$00
     sta player_y_velocity, x
     lda player_flags, x
+    and #PLAYER_IS_HURT
+    beq :+
+    lda #PLAYER_INVINCIBILITY_LENGTH
+    sta player_invincibility_timer, x
+    :
+    lda player_flags, x
     ora #PLAYER_IS_GROUNDED
     sta player_flags, x ; Store that we're on the ground
     rts
@@ -87,11 +89,14 @@ player_on_hit_ground:
 player_x_velocity = object_variables_0
 player_y_velocity = object_variables_1
 player_flags = object_variables_2
+player_invincibility_timer = object_variables_3
 PLAYER_IS_GROUNDED = %00000001
+PLAYER_IS_HURT = %00000010
 PLAYER_ACCELERATION = 4 ; subpixels per frame
 PLAYER_MAX_SPEED = 16 ; subpixels per frame
 PLAYER_JUMP_VELOCITY = 256 - 44 ; subpixels per frame
 PLAYER_WIDTH = 16
+PLAYER_INVINCIBILITY_LENGTH = 120
 player_step:
     lda object_animations_ids, x
     sta scratch + 2 ; Flag for new animation playing
@@ -239,6 +244,14 @@ player_step:
     bne @test_ceiling_collision_right
     @after_test_ceiling_collision_right:
     @after_vertical_collision:
+    lda player_flags
+    and #PLAYER_IS_HURT
+    beq :+
+    lda #ANIM_PLAYER_HURT
+    sta scratch + 2
+    lda player_x_velocity, x
+    jmp @after_store_x_velocity
+    :
     lda controller_input
     and #BUTTON_RIGHT + BUTTON_LEFT ; Check if we're pressing left or right
     beq @not_pressing_anything
@@ -306,10 +319,26 @@ player_step:
     :
     @after_determine_x_velocity:
     sta player_x_velocity, x
+    @after_store_x_velocity:
     tay ; Reset zero flag
+    lda player_invincibility_timer, x
+    beq :+
+    lda player_flags, x
+    and #PLAYER_IS_HURT
+    beq :+
+    lda player_flags, x
+    and #$FF ^ PLAYER_IS_HURT
+    sta player_flags, x
+    lda object_flags, x
+    eor #OBJECT_FLIPPED_H
+    sta object_flags, x
+    lda #$00
+    sta player_x_velocity, x
+    jmp @after_determine_direction
+    :
+    tya
     beq :++ ; Don't change the direction if the velocity is 0
-    cmp #%10000000
-    bcc :+
+    bpl :+
     lda object_flags, x
     ora #OBJECT_FLIPPED_H ; Flip if facing to the left
     sta object_flags, x
@@ -319,6 +348,7 @@ player_step:
     and #$FF ^ OBJECT_FLIPPED_H ; Unflip if facing to the right
     sta object_flags, x
     :
+    @after_determine_direction:
     lda object_x_page_subpixels, x
     and #SUBPIXEL_MASK
     clc
@@ -453,6 +483,9 @@ player_step:
     bne @test_wall_collision_bottom_left
     @after_test_wall_collision_bottom_left:
     @after_test_wall_collision:
+    lda player_flags, x
+    and #PLAYER_IS_HURT
+    bne @determine_animation
     lda player_flags, x ; Check if we're on the ground
     and #PLAYER_IS_GROUNDED
     beq @not_on_ground
@@ -476,6 +509,42 @@ player_step:
     sta player_y_velocity, x
     @after_release_jump:
     @after_air_code:
+    lda player_invincibility_timer, x
+    beq @do_hit_collision_detection
+    sec
+    sbc #$01
+    sta player_invincibility_timer, x
+    and #$01
+    beq :+
+    lda object_flags, x
+    ora #OBJECT_IS_HIDDEN
+    sta object_flags, x
+    jmp @determine_animation
+    :
+    lda object_flags, x
+    and #$FF ^ OBJECT_IS_HIDDEN
+    sta object_flags, x
+    jmp @determine_animation
+    @do_hit_collision_detection:
+    lda buttons_pressed
+    and #BUTTON_DOWN
+    beq @determine_animation
+    lda object_flags, x
+    and #OBJECT_FLIPPED_H
+    bne :+
+    lda #256 - $0B
+    bne :++
+    :
+    lda #$0B
+    :
+    sta player_x_velocity, x
+    lda #256 - 30
+    sta player_y_velocity, x
+    dec player_hp
+    lda player_flags, x
+    ora #PLAYER_IS_HURT
+    sta player_flags, x
+    @determine_animation:
     lda scratch + 2 ; Load animation to play
     cmp object_animations_ids, x
     beq :+
