@@ -49,6 +49,7 @@ DeathSoundNoise:
     .byte PLAY_NOTE, 10, 10
     .byte PLAY_NOTE, 10, 10
     .byte PLAY_NOTE, 10, 10
+    .byte PLAY_NOTE, 10, 10
     .byte GOTO_LOOP
     .addr SilenceSongLoop
 

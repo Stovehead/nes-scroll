@@ -38,6 +38,11 @@ light_switch_step:
     :
 
 light_switch_still_step:
+    lda player_flags
+    and #PLAYER_IS_DEAD
+    beq :+
+    rts
+    :
     stx scratch
     jsr load_object_collision
     ldx scratch

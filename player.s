@@ -92,6 +92,7 @@ player_flags = object_variables_2
 player_invincibility_timer = object_variables_3
 PLAYER_IS_GROUNDED = %00000001
 PLAYER_IS_HURT = %00000010
+PLAYER_IS_DEAD = %00000100
 PLAYER_ACCELERATION = 4 ; subpixels per frame
 PLAYER_MAX_SPEED = 16 ; subpixels per frame
 PLAYER_JUMP_VELOCITY = 256 - 44 ; subpixels per frame
@@ -122,7 +123,14 @@ player_step:
     adc player_y_velocity, x
     sta scratch + 5 ; Store our new subpixel position for recombination later
     cmp #SUBPIXEL_MASK ; Check if subpixel overflowed
-    bcc @after_increment_y_position ; Skip incrementing position if it didn't
+    bcs :++
+    lda player_flags, x
+    and #PLAYER_IS_DEAD
+    beq :+
+    jmp @after_vertical_collision
+    :
+    jmp @after_increment_y_position ; Skip incrementing position if it didn't
+    :
     and #PAGE_MASK ; Get whole part to add
     lsr
     lsr
@@ -158,6 +166,20 @@ player_step:
     and #PAGE_MASK
     ora scratch + 5
     sta object_y_page_subpixels, x
+    lda player_flags, x
+    and #PLAYER_IS_DEAD
+    beq @player_is_not_dead
+    lda object_y_positions, x
+    sec
+    sbc y_scroll
+    cmp #$08
+    bcs @after_check_hide_player
+    lda object_flags, x
+    ora #OBJECT_IS_HIDDEN
+    sta object_flags, x
+    @after_check_hide_player:
+    jmp @after_vertical_collision
+    @player_is_not_dead:
     ldy #$08 ; Limit collision checks to 8 so that we don't infinitely loop
     lda player_y_velocity, x
     bne @after_increment_y_position
@@ -394,6 +416,11 @@ player_step:
     sta object_x_page_subpixels, x
     :
     @after_add_x_velocity:
+    lda player_flags, x
+    and #PLAYER_IS_DEAD
+    beq :+
+    jmp @determine_animation
+    :
     ldy #$08
     @test_wall_collision_top_right:
     get_collision_at_point 13, 2
@@ -485,7 +512,9 @@ player_step:
     @after_test_wall_collision:
     lda player_flags, x
     and #PLAYER_IS_HURT
-    bne @determine_animation
+    beq :+
+    jmp @determine_animation
+    :
     lda player_flags, x ; Check if we're on the ground
     and #PLAYER_IS_GROUNDED
     beq @not_on_ground
@@ -544,6 +573,31 @@ player_step:
     lda player_flags, x
     ora #PLAYER_IS_HURT
     sta player_flags, x
+    txa
+    pha
+    tya
+    pha
+    ldy #SFX::HURT
+    ldx #$06
+    jsr play_sound_effect
+    pla
+    tay
+    pla
+    tax
+    lda player_hp
+    bne @determine_animation
+    lda player_flags, x
+    ora #PLAYER_IS_DEAD
+    sta player_flags, x
+    ldy #$00
+    jsr play_song
+    lda #20
+    sta dramatic_pause_timer
+    lda #ANIM_PLAYER_HURT
+    sta scratch + 2
+    lda object_flags, x
+    eor #OBJECT_FLIPPED_H
+    sta object_flags, x
     @determine_animation:
     lda scratch + 2 ; Load animation to play
     cmp object_animations_ids, x

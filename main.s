@@ -50,6 +50,8 @@ LIGHTS_OFF = %00000001
     current_page: .res 1
     x_scroll: .res 1
     y_scroll: .res 1
+    x_scroll_offset: .res 1
+    y_scroll_offset: .res 1
     current_ppu_mask: .res 1
     current_ppu_ctrl: .res 1
     current_level: .res 1
@@ -73,6 +75,11 @@ LIGHTS_OFF = %00000001
     nmi_jump: .res 3
     game_paused: .res 1
     player_hp: .res 1
+    dramatic_pause_timer: .res 1
+    screen_fading: .res 1
+    player_has_no_control: .res 1
+    respawn_timer: .res 1
+    where_to_go_after_fade_out: .res 2
     split_scroll_position = level_flags
     intro_stage = left_object_index
 
@@ -414,8 +421,18 @@ normal_nmi:
     @after_update_palettes:
     bit PPUSTATUS ; Set scroll
     lda x_scroll
+    clc
+    adc x_scroll_offset
     sta PPUSCROLL
     lda y_scroll
+    clc
+    adc y_scroll_offset
+    bcs :+
+    cmp #240
+    bcc :++
+    :
+    adc #15
+    :
     sta PPUSCROLL
 
     lda current_ppu_mask
@@ -573,9 +590,62 @@ title_screen_logic:
     dec frame_done
     rti
 
-gameplay_logic:
-    jsr read_controllers
+reload_level:
+    update_nmi load_level
+    rti
 
+gameplay_logic:
+    lda dramatic_pause_timer
+    beq @no_dramatic_pause
+    inc frame_count
+    lda dramatic_pause_timer
+    cmp #10
+    bcc :+
+    jsr rand
+    lda seed
+    and #%00000001
+    sta x_scroll_offset
+    lda seed + 1
+    and #%00000001
+    sta y_scroll_offset
+    jmp :++
+    :
+    lda #$00
+    sta x_scroll_offset
+    sta y_scroll_offset
+    :
+    dec dramatic_pause_timer
+    bne :+
+    ldy #$02
+    jsr play_song
+    lda #120
+    sta respawn_timer
+    lda #<reload_level
+    sta where_to_go_after_fade_out
+    lda #>reload_level
+    sta where_to_go_after_fade_out + 1
+    jmp @build_sprites
+    :
+    jmp @build_sprites
+    @no_dramatic_pause:
+    lda player_has_no_control
+    bne :+
+    jsr read_controllers
+    jmp :++
+    :
+    lda #$00
+    sta controller_input
+    sta controller_input_prev
+    sta buttons_pressed
+    sta buttons_released
+    :
+    lda respawn_timer
+    beq :+
+    dec respawn_timer
+    bne :+
+    lda #$FF
+    sta screen_fading
+    :
     lda game_paused
     beq @game_not_paused
     lda buttons_pressed
@@ -593,6 +663,27 @@ gameplay_logic:
     @game_not_paused:
 
     inc frame_count
+    lda screen_fading
+    beq @screen_not_fading
+    bmi @fade_out
+    @fade_in:
+    inc brightness
+    lda brightness
+    bpl :+
+    jmp @after_check_pause_button
+    :
+    lda #$00
+    sta screen_fading
+    jmp @after_check_pause_button
+    @fade_out:
+    dec brightness
+    lda brightness
+    cmp #$F8
+    bcs @after_check_pause_button
+    lda #$00
+    sta screen_fading
+    jmp (where_to_go_after_fade_out)
+    @screen_not_fading:
     lda buttons_pressed
     and #BUTTON_START
     beq @after_check_pause_button
@@ -665,7 +756,8 @@ gameplay_logic:
     lda buttons_pressed
     and #BUTTON_UP
     beq :+
-    inc player_hp
+    lda #$01
+    sta player_hp
     :
 
     lda frame_count ; Shuffle palette for computer level
@@ -739,7 +831,7 @@ gameplay_logic:
 
     jsr handle_scroll
     jsr spawn_objects_after_scroll
-
+    @build_sprites:
     ; Build sprites
     ldx #$00
     ldy player_hp
@@ -1323,6 +1415,11 @@ handle_scroll:
     cmp #$02
     beq :+
     rts ; Return if it's not the player
+    :
+    lda player_flags
+    and #PLAYER_IS_DEAD
+    beq :+
+    rts
     :
     lda object_y_positions
     adc #$07 + 120
@@ -1917,7 +2014,6 @@ load_level:
     dex
     bne :-
     sta level_flags
-    sta brightness
     sta light_fade_timer
     sta skip_light_switch_collision
     sta scratch + 9 ; Current column number
@@ -1925,6 +2021,9 @@ load_level:
     sta current_page ; Reset scroll-related variables
     sta x_scroll
     sta y_scroll
+    lda #$F7
+    sta brightness
+    inc screen_fading
     lda #PLAYER_OBJECT
     ldx #$00
     jsr spawn_object_without_spawn_flag
