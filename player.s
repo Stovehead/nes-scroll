@@ -172,7 +172,7 @@ player_step:
     lda object_y_positions, x
     sec
     sbc y_scroll
-    cmp #$08
+    cmp #$18
     bcs @after_check_hide_player
     lda object_flags, x
     ora #OBJECT_IS_HIDDEN

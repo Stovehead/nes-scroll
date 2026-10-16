@@ -421,18 +421,10 @@ normal_nmi:
     @after_update_palettes:
     bit PPUSTATUS ; Set scroll
     lda x_scroll
-    clc
-    adc x_scroll_offset
+    eor x_scroll_offset
     sta PPUSCROLL
     lda y_scroll
-    clc
-    adc y_scroll_offset
-    bcs :+
-    cmp #240
-    bcc :++
-    :
-    adc #15
-    :
+    eor y_scroll_offset
     sta PPUSCROLL
 
     lda current_ppu_mask
