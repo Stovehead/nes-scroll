@@ -2082,11 +2082,11 @@ load_level:
     sta sprite_palettes + 7
     lda #$06
     sta sprite_palettes + 8
-    lda #$39
+    lda #$20
     sta sprite_palettes + 9
-    lda #$19
+    lda #$16
     sta sprite_palettes + 10
-    lda #$09
+    lda #$12
     sta sprite_palettes + 11
 
     lda LevelTilePointersLow, x
@@ -3194,13 +3194,29 @@ ObjectHitboxHeights:
     ElectricGateOn5
     ElectricGateOn6
     ElectricGateOn7
+    Teleport0
+    Teleport1
+    Teleport2
+    Teleport3
+    Teleport4
+    Teleport5
+    Teleport6
+    Teleport7
+    Teleport8
+    Teleport9
+    Teleport10
+    Teleport11
+    Teleport12
+    Teleport13
+    Teleport14
+    Teleport15
 .endenum
 
 ; Sprite layout structure:
 ; 1 byte for the number of sprites, 1 byte for width in pixels, 1 byte for height in pixels
 ; For each sprite, 1 byte for index, 1 byte for x offset, 1 byte for y offset, and 1 byte for attributes
 NumMetaSprites:
-    .byte 21
+    .byte 37
 .define MetaSpritePointers \
     TestMetaSprite0, \
     TestMetaSprite1, \
@@ -3222,7 +3238,23 @@ NumMetaSprites:
     ElectricGateOn4, \
     ElectricGateOn5, \
     ElectricGateOn6, \
-    ElectricGateOn7
+    ElectricGateOn7, \
+    Teleport0, \
+    Teleport1, \
+    Teleport2, \
+    Teleport3, \
+    Teleport4, \
+    Teleport5, \
+    Teleport6, \
+    Teleport7, \
+    Teleport8, \
+    Teleport9, \
+    Teleport10, \
+    Teleport11, \
+    Teleport12, \
+    Teleport13, \
+    Teleport14, \
+    Teleport15
 MetaSpritePointersLow:
     .lobytes MetaSpritePointers
 MetaSpritePointersHigh:
@@ -3748,6 +3780,886 @@ ElectricGateOn7:
     .byte $20       ; Y offset
     .byte %11000000 ; Attributes
 
+Teleport0:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0B       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $00       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $0C       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $0C       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $18       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $18       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $0B       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $0B       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000000 ; Attributes
+
+Teleport1:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0B       ; Index
+    .byte $01       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $01       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $11       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $11       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $17       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $17       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $06       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $06       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000000 ; Attributes
+
+Teleport2:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $15       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $15       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $15       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $15       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+Teleport3:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0D       ; Index
+    .byte $07       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $07       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $17       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $17       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $11       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $11       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $01       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $01       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+Teleport4:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0B       ; Index
+    .byte $0C       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $0C       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000011 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $00       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $18       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $18       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $0C       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $0C       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+Teleport5:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0B       ; Index
+    .byte $11       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $11       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000011 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $01       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $01       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $17       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $17       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $07       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $07       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+Teleport6:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0D       ; Index
+    .byte $15       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $15       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000011 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $15       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $15       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+Teleport7:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0D       ; Index
+    .byte $17       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $17       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000011 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $07       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $07       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $11       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $11       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $01       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $01       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+Teleport8:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0B       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $00       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000011 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $0B       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $0B       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $18       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $18       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $0C       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $0C       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+Teleport9:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0B       ; Index
+    .byte $01       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $01       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000011 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $11       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $11       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $17       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $17       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $07       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $07       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+Teleport10:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0D       ; Index
+    .byte $02       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $02       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000011 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $15       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $15       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $16       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $16       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000000 ; Attributes
+
+Teleport11:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0D       ; Index
+    .byte $06       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $06       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000011 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $17       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $17       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $12       ; X offset
+    .byte $00       ; Y offset
+    .byte %10000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $12       ; X offset
+    .byte $10       ; Y offset
+    .byte %10000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $01       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $01       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000000 ; Attributes
+
+Teleport12:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0D       ; Index
+    .byte $FF       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $FF       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000011 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $0C       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $0C       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $0C       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $0C       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $19       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $19       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000000 ; Attributes
+
+Teleport13:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0D       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $00       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000011 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $11       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $11       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $07       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $07       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $18       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $18       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000000 ; Attributes
+
+Teleport14:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $03       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $16       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $16       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $02       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $02       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $15       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $15       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000000 ; Attributes
+
+Teleport15:
+    .byte $0A ; Num sprites
+    .byte $20 ; Width
+    .byte $20 ; Height
+
+    .byte $0B       ; Index
+    .byte $07       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $07       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $18       ; X offset
+    .byte $00       ; Y offset
+    .byte %00000011 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $18       ; X offset
+    .byte $10       ; Y offset
+    .byte %00000011 ; Attributes
+
+    .byte $1D       ; Index
+    .byte $08       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $1F       ; Index
+    .byte $10       ; X offset
+    .byte $08       ; Y offset
+    .byte %00000000 ; Attributes
+
+    .byte $0D       ; Index
+    .byte $00       ; X offset
+    .byte $00       ; Y offset
+    .byte %11000000 ; Attributes
+    
+    .byte $0D       ; Index
+    .byte $00       ; X offset
+    .byte $10       ; Y offset
+    .byte %11000000 ; Attributes
+
+    .byte $0B       ; Index
+    .byte $11       ; X offset
+    .byte $00       ; Y offset
+    .byte %01000000 ; Attributes
+    
+    .byte $0B       ; Index
+    .byte $11       ; X offset
+    .byte $10       ; Y offset
+    .byte %01000000 ; Attributes
+
 .enum
     ANIM_PLAYER_IDLE
     ANIM_PLAYER_WALK
@@ -3757,10 +4669,11 @@ ElectricGateOn7:
     ANIM_LIGHT_SWITCH_UP
     ANIM_ELECTRIC_GATE_OFF
     ANIM_ELECTRIC_GATE_ON
+    ANIM_TELEPORT
 .endenum
 
 NumAnimations:
-    .byte $08
+    .byte $09
 .define AnimationFramePointers \
     AnimPlayerIdleFrames, \
     AnimPlayerWalkFrames, \
@@ -3769,7 +4682,8 @@ NumAnimations:
     AnimLightSwitchDownFrames, \
     AnimLightSwitchUpFrames, \
     AnimElectricGateOffFrames, \
-    AnimElectricGateOnFrames
+    AnimElectricGateOnFrames, \
+    AnimTeleportFrames
 AnimationFramePointersLow:
     .lobytes AnimationFramePointers
 AnimationFramePointersHigh:
@@ -3783,7 +4697,8 @@ AnimationFramePointersHigh:
     AnimLightSwitchDownLengths, \
     AnimLightSwitchUpLengths, \
     AnimElectricGateOffLengths, \
-    AnimElectricGateOnLengths
+    AnimElectricGateOnLengths, \
+    AnimTeleportLengths
 AnimationFrameLengthPointersLow:
     .lobytes AnimationFrameLengthPointers
 AnimationFrameLengthPointersHigh:
@@ -3799,6 +4714,7 @@ AnimationLengths:
     .byte 5         ; Light switch up
     .byte 1         ; Electric gate off
     .byte 128 + 8   ; Electric gate on
+    .byte 128 + 16  ; Teleport
 
 AnimPlayerIdleFrames:
     .byte MetaSprite::PlayerIdle
@@ -3848,6 +4764,15 @@ AnimElectricGateOnFrames:
 
 AnimElectricGateOnLengths:
     .byte $02, $02, $02, $02, $02, $02, $02, $02
+
+AnimTeleportFrames:
+    .byte MetaSprite::Teleport0, MetaSprite::Teleport1, MetaSprite::Teleport2, MetaSprite::Teleport3
+    .byte MetaSprite::Teleport4, MetaSprite::Teleport5, MetaSprite::Teleport6, MetaSprite::Teleport7
+    .byte MetaSprite::Teleport8, MetaSprite::Teleport9, MetaSprite::Teleport10, MetaSprite::Teleport11
+    .byte MetaSprite::Teleport12, MetaSprite::Teleport13, MetaSprite::Teleport14, MetaSprite::Teleport15
+
+AnimTeleportLengths:
+    .byte $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02
 
 MetaTilesTopLeft:
     .byte $00, $00, $0E, $14, $16, $00, $02, $07, $09, $42, $43, $00, $1F, $26, $28, $00, $34, $00, $3E, $00, $1B, $1D, $20, $25, $2E, $30, $31, $30, $2E, $3A, $3C, $3A, $44, $46, $54, $56, $48, $4A, $58, $5A, $63, $65, $64, $64, $6E, $70, $72, $74, $6E, $20, $78, $7A, $91, $6E, $83, $7F, $74, $6E, $20, $8A, $8B, $20, $8A, $6E, $20, $92, $94, $9A, $9C, $A1
