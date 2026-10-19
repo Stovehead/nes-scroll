@@ -154,6 +154,21 @@ Colors:
 reset:
     sei        ; ignore IRQs
     cld        ; disable decimal mode
+    sta scratch + 1
+    stx scratch + 2
+    sty scratch + 3
+    tsx
+    stx scratch + 4
+    dex
+    txs
+    pla
+    php
+    tay
+    pla
+    sta scratch + 5
+    tya
+    inx
+    sta $100, x
     ldx #$40
     stx $4017  ; disable APU frame IRQ
     ldx #$ff
@@ -162,6 +177,14 @@ reset:
     stx $2000  ; disable NMI
     stx $2001  ; disable rendering
     stx $4010  ; disable DMC IRQs
+
+    jsr read_controllers
+    lda controller_input
+    and #BUTTON_START | BUTTON_SELECT | BUTTON_A | BUTTON_B
+    cmp #BUTTON_START | BUTTON_SELECT | BUTTON_A | BUTTON_B
+    bne :+
+    jmp crash_handler_after_preserve_vars
+    :
 
     ; Optional (omitted):
     ; Set up mapper and jmp to further init code here.
@@ -2921,6 +2944,14 @@ crash_handler:
     inx
     sta $100, x
     sei
+    crash_handler_after_preserve_vars:
+    bit $2002
+    @vblankwait1:
+    bit $2002
+    bpl @vblankwait1
+    @vblankwait2:
+    bit $2002
+    bpl @vblankwait2
 
     ldx #$00 ; Clear OAM
     lda #$FF
