@@ -157,18 +157,27 @@ reset:
     sta scratch + 1
     stx scratch + 2
     sty scratch + 3
+    beq @zero_flag_set
+    bmi @minus_flag_set
+    lda #$00
+    beq @after_get_zero_minus_flags
+    @minus_flag_set:
+    lda #%10000000
+    bne @after_get_zero_minus_flags
+    @zero_flag_set:
+    bmi @zero_and_minus_flags_set
+    lda #%00000010
+    bne @after_get_zero_minus_flags
+    @zero_and_minus_flags_set:
+    bmi @zero_and_minus_flags_set
+    lda #%10000010
+    @after_get_zero_minus_flags:
+    bcc @carry_flag_not_set
+    ora #$01
+    @carry_flag_not_set:
+    sta scratch + 5
     tsx
     stx scratch + 4
-    dex
-    txs
-    pla
-    php
-    tay
-    pla
-    sta scratch + 5
-    tya
-    inx
-    sta $100, x
     ldx #$40
     stx $4017  ; disable APU frame IRQ
     ldx #$ff
@@ -178,13 +187,6 @@ reset:
     stx $2001  ; disable rendering
     stx $4010  ; disable DMC IRQs
 
-    jsr read_controllers
-    lda controller_input
-    and #BUTTON_START | BUTTON_SELECT | BUTTON_A | BUTTON_B
-    cmp #BUTTON_START | BUTTON_SELECT | BUTTON_A | BUTTON_B
-    bne :+
-    jmp crash_handler_after_preserve_vars
-    :
 
     ; Optional (omitted):
     ; Set up mapper and jmp to further init code here.
@@ -199,6 +201,25 @@ reset:
 @vblankwait1:
     bit $2002
     bpl @vblankwait1
+
+    lda #$01
+    sta JOY1
+    lsr
+    sta JOY1
+    lda JOY1
+    lsr
+    bcc :+
+    lda JOY1
+    lsr
+    bcc :+
+    lda JOY1
+    lsr
+    bcc :+
+    lda JOY1
+    lsr
+    bcc :+
+    jmp crash_handler_after_preserve_vars
+    :
 
     ; We now have about 30,000 cycles to burn before the PPU stabilizes.
     ; One thing we can do with this time is put RAM in a known state.
@@ -2924,7 +2945,27 @@ check_object_on_screen:
     rts
 
 crash_handler:
+    sei
     sta scratch + 1
+    beq @zero_flag_set
+    bmi @minus_flag_set
+    lda #$00
+    beq @after_get_zero_minus_flags
+    @minus_flag_set:
+    lda #%10000000
+    bne @after_get_zero_minus_flags
+    @zero_flag_set:
+    bmi @zero_and_minus_flags_set
+    lda #%00000010
+    bne @after_get_zero_minus_flags
+    @zero_and_minus_flags_set:
+    bmi @zero_and_minus_flags_set
+    lda #%10000010
+    @after_get_zero_minus_flags:
+    bcc @carry_flag_not_set
+    ora #$01
+    @carry_flag_not_set:
+    sta scratch + 5
     lda #%00011000 ; Disable NMI
     sta PPUCTRL
     lda #%00000110
@@ -2933,17 +2974,6 @@ crash_handler:
     sty scratch + 3
     tsx
     stx scratch + 4
-    dex
-    txs
-    pla
-    php
-    tay
-    pla
-    sta scratch + 5
-    tya
-    inx
-    sta $100, x
-    sei
     crash_handler_after_preserve_vars:
     bit $2002
     @vblankwait1:
@@ -2952,16 +2982,6 @@ crash_handler:
     @vblankwait2:
     bit $2002
     bpl @vblankwait2
-
-    ldx #$00 ; Clear OAM
-    lda #$FF
-    :
-    sta OAMBUFFER, x
-    inx
-    bne :-
-
-    lda #$00
-    sta OAMADDR
 
     lda #$20
     sta PPUADDR
@@ -3105,9 +3125,6 @@ crash_handler:
     bit PPUSTATUS ; Wait until v-blank
     bpl :-
 
-    lda #$02
-    sta OAMDMA
-
     lda #$3F ; Reset palettes
     sta PPUADDR
     lda #$01
@@ -3127,7 +3144,7 @@ crash_handler:
 
     lda #%00011000
     sta PPUCTRL
-    lda #%00011110
+    lda #%00001110
     sta PPUMASK
     jmp forever
 
