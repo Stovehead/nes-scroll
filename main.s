@@ -3120,6 +3120,20 @@ crash_handler:
     sty PPUDATA
     lda scratch + 5
     jsr print_hex
+    
+    lda #$20
+    sta PPUADDR
+    lda #$22
+    sta PPUADDR
+    ldx #$00
+    :
+    lda VersionNumber, x
+    beq :+
+    sta PPUDATA
+    inx
+    jmp :-
+    :
+
     bit PPUSTATUS ; Clear v-blank flag
     :
     bit PPUSTATUS ; Wait until v-blank
@@ -5267,10 +5281,20 @@ GameLoopJumpTableHigh:
    .byte 0
 .endmacro
 
+.macro asciioffset Str, Off
+   .repeat .strlen(Str), I
+      .byte .strat(Str, I) + Off
+   .endrep
+.endmacro
+
 CrashMessage:
     asciizoffset "A FATAL ERROR HAS OCCURRED", $A5
     asciizoffset "PLEASE REPORT THIS ISSUE", $A5
     asciizoffset "STACK DUMP", $A5
+
+VersionNumber:
+    asciioffset "V", $A5
+    asciizoffset "00", $AC
 
 PauseString:
     asciizoffset "PAUSED", $A5
