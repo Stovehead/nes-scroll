@@ -101,6 +101,18 @@ PLAYER_INVINCIBILITY_LENGTH = 120
 player_step:
     lda object_animations_ids, x
     sta scratch + 2 ; Flag for new animation playing
+    lda object_y_positions, x
+    clc
+    adc #15
+    cmp #240
+    bcc :+
+    adc #15
+    :
+    lsr
+    lsr
+    lsr
+    lsr
+    sta scratch + 6 ; Store previous Y position
     lda player_y_velocity, x ; Apply gravity
     cmp #128 ; Check if velocity is negative
     bcc :+
@@ -190,8 +202,34 @@ player_step:
     @test_floor_collision_left:
     get_collision_at_point 5, 15
     ldx scratch + 3
+    tay
     and #COLLISION_TOP
     beq @after_test_floor_collision_left ; Ignore this tile if it's not solid on top
+    tya
+    and #COLLISION_LEFT | COLLISION_RIGHT ; Check if this tile is semisolid
+    bne @not_semisolid_left
+    lda player_y_velocity, x
+    bmi @after_test_floor_collision_left ; Skip collision with semisolid if moving upwards
+    lda object_y_positions, x
+    clc
+    adc #15
+    cmp #240
+    bcc :+
+    adc #15
+    :
+    lsr
+    lsr
+    lsr
+    lsr
+    bne :+
+    lda scratch + 6
+    beq @after_test_floor_collision_left
+    jmp @not_semisolid_left
+    :
+    cmp scratch + 6
+    bcc @after_test_floor_collision_left ; Skip collision with semisolid if we didn't move down from above
+    beq @after_test_floor_collision_left
+    @not_semisolid_left:
     lda object_y_page_subpixels, x ; Set subpixel back to 0
     and #PAGE_MASK
     sta object_y_page_subpixels, x
@@ -209,8 +247,34 @@ player_step:
     @test_floor_collision_right:
     get_collision_at_point 10, 15
     ldx scratch + 3
+    tay
     and #COLLISION_TOP
     beq @after_test_floor_collision_right
+    tya
+    and #COLLISION_LEFT | COLLISION_RIGHT
+    bne @not_semisolid_right
+    lda player_y_velocity, x
+    bmi @after_test_floor_collision_right
+    lda object_y_positions, x
+    clc
+    adc #15
+    cmp #240
+    bcc :+
+    adc #15
+    :
+    lsr
+    lsr
+    lsr
+    lsr
+    bne :+
+    lda scratch + 6
+    beq @after_test_floor_collision_right
+    jmp @not_semisolid_right
+    :
+    cmp scratch + 6
+    bcc @after_test_floor_collision_right
+    beq @after_test_floor_collision_right
+    @not_semisolid_right:
     lda object_y_page_subpixels, x
     and #PAGE_MASK
     sta object_y_page_subpixels, x
