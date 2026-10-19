@@ -152,11 +152,7 @@ Colors:
 .endmacro
 
 reset:
-    sei        ; ignore IRQs
-    cld        ; disable decimal mode
     sta scratch + 1
-    stx scratch + 2
-    sty scratch + 3
     beq @zero_flag_set
     bmi @minus_flag_set
     lda #$00
@@ -176,6 +172,12 @@ reset:
     ora #$01
     @carry_flag_not_set:
     sta scratch + 5
+    lda #$00
+    sta PPUCTRL
+    sei
+    cld
+    stx scratch + 2
+    sty scratch + 3
     tsx
     stx scratch + 4
     ldx #$40
@@ -183,7 +185,6 @@ reset:
     ldx #$ff
     txs        ; set stack pointer to $01ff
     inx        ; now X = 0
-    stx $2000  ; disable NMI
     stx $2001  ; disable rendering
     stx $4010  ; disable DMC IRQs
 
