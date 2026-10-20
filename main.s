@@ -438,12 +438,11 @@ normal_nmi:
     stx scratch
     ldx #$FF
     txs
-    @pop_slide:
+    @pop_loop:
     pla
-    beq @end_pop_slide
+    beq @end_pop_loop
     tax
     pla
-    bit PPUSTATUS
     sta PPUCTRL
     pla
     sta PPUADDR
@@ -454,8 +453,8 @@ normal_nmi:
     sta PPUDATA
     dex
     bne @loop
-    jmp @pop_slide
-    @end_pop_slide:
+    jmp @pop_loop
+    @end_pop_loop:
     ldx scratch
     txs
     lda #$00
