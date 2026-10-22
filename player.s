@@ -96,6 +96,8 @@ PLAYER_IS_DEAD = %00000100
 PLAYER_ACCELERATION = 4 ; subpixels per frame
 PLAYER_MAX_SPEED = 16 ; subpixels per frame
 PLAYER_JUMP_VELOCITY = 256 - 44 ; subpixels per frame
+PLAYER_HURT_X_VELOCITY = 11 ; subpixels per frame
+PLAYER_HURT_Y_VELOCITY = 256 - 30 ; subpixels per frame
 PLAYER_WIDTH = 16
 PLAYER_INVINCIBILITY_LENGTH = 120
 player_step:
@@ -483,7 +485,7 @@ player_step:
     lda player_flags, x
     and #PLAYER_IS_DEAD
     beq :+
-    jmp @determine_animation
+    jmp player_determine_animation
     :
     ldy #$08
     @test_wall_collision_top_right:
@@ -577,7 +579,7 @@ player_step:
     lda player_flags, x
     and #PLAYER_IS_HURT
     beq :+
-    jmp @determine_animation
+    jmp player_determine_animation
     :
     lda player_flags, x ; Check if we're on the ground
     and #PLAYER_IS_GROUNDED
@@ -612,16 +614,61 @@ player_step:
     lda object_flags, x
     ora #OBJECT_IS_HIDDEN
     sta object_flags, x
-    jmp @determine_animation
+    jmp @do_hit_collision_detection
     :
     lda object_flags, x
     and #$FF ^ OBJECT_IS_HIDDEN
     sta object_flags, x
-    jmp @determine_animation
+    jmp @do_hit_collision_detection
     @do_hit_collision_detection:
-    lda buttons_pressed
-    and #BUTTON_DOWN
-    beq @determine_animation
+    ldy #$0F
+    stx scratch + 5
+    jsr load_object_collision
+    ldx scratch + 5
+    player_collision_check_loop:
+    lda object_ids, y
+    beq player_end_collision_check_loop
+    sty scratch + 4
+    tay
+    lda PlayerCollisionHandlerJumpTableHigh, y
+    beq player_reload_y
+    pha
+    lda PlayerCollisionHandlerJumpTableLow, y
+    pha
+    ldy scratch + 4
+    rts
+    player_reload_y:
+    ldy scratch + 4
+    player_end_collision_check_loop:
+    dey
+    bne player_collision_check_loop
+    player_determine_animation:
+    lda scratch + 2 ; Load animation to play
+    cmp object_animations_ids, x
+    beq :+
+    tay
+    sta object_animations_ids, x
+    jmp init_animation ; If it's different from our current animation, initialize it
+    :
+    jmp play_animation ; Otherwise continue to play current animation
+
+; Player index in X, other object index in Y
+player_handle_generic_enemy_collision:
+    lda player_invincibility_timer, x
+    bne player_reload_y
+    jsr test_object_collision
+    beq player_reload_y
+
+; Object index in X
+player_deal_damage:
+    txa
+    pha
+    ldy #SFX::HURT
+player_deal_damage_after_load_sound_effect:
+    ldx #$06
+    jsr play_sound_effect
+    pla
+    tax
     lda object_flags, x
     and #OBJECT_FLIPPED_H
     bne :+
@@ -637,19 +684,8 @@ player_step:
     lda player_flags, x
     ora #PLAYER_IS_HURT
     sta player_flags, x
-    txa
-    pha
-    tya
-    pha
-    ldy #SFX::HURT
-    ldx #$06
-    jsr play_sound_effect
-    pla
-    tay
-    pla
-    tax
     lda player_hp
-    bne @determine_animation
+    bne player_determine_animation
     lda player_flags, x
     ora #PLAYER_IS_DEAD
     sta player_flags, x
@@ -662,12 +698,20 @@ player_step:
     lda object_flags, x
     eor #OBJECT_FLIPPED_H
     sta object_flags, x
-    @determine_animation:
-    lda scratch + 2 ; Load animation to play
-    cmp object_animations_ids, x
-    beq :+
-    tay
-    sta object_animations_ids, x
-    jmp init_animation ; If it's different from our current animation, initialize it
-    :
-    jmp play_animation ; Otherwise continue to play current animation
+    lda #$01
+    jmp player_determine_animation
+
+.pushseg
+.segment "RODATA"
+.define PlayerCollisionHandlerJumpTable \
+    $0000, \ 
+    $0000, \ 
+    $0000, \ 
+    electric_gate_handle_player_collision - 1
+
+PlayerCollisionHandlerJumpTableLow:
+    .lobytes PlayerCollisionHandlerJumpTable
+
+PlayerCollisionHandlerJumpTableHigh:
+    .hibytes PlayerCollisionHandlerJumpTable
+.popseg

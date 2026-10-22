@@ -44,3 +44,27 @@ electric_gate_step:
     jmp init_animation
     @no_change_in_state:
     jmp play_animation
+
+; Player index in X, this index in Y
+electric_gate_handle_player_collision:
+    lda level_flags
+    and #LIGHTS_OFF
+    bne :+
+    jsr test_object_collision
+    bne :++
+    :
+    jmp player_reload_y
+    :
+    lda player_invincibility_timer, x
+    beq :+
+    inc player_hp
+    lda #$00
+    sta player_invincibility_timer, x
+    lda object_flags, x
+    and #$FF ^ OBJECT_IS_HIDDEN
+    sta object_flags, x
+    :
+    txa
+    pha
+    ldy #SFX::SHOCKED
+    jmp player_deal_damage_after_load_sound_effect
