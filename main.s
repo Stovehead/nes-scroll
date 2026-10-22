@@ -496,9 +496,6 @@ intro_logic:
     dec frame_done
     rti
     :
-    bit PPUSTATUS
-    lda x_scroll
-    sta PPUSCROLL
     jsr rand
     @check_sprite_0_clear:
     bit PPUSTATUS
