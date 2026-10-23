@@ -5517,7 +5517,7 @@ OpeningLine3:
     OpeningLine3
 
 OpeningLinePointersHigh:
-    .hibytes OpeningLinePointers
+    .hibytes OpeningLinePointers ; Could optimize these out since they're all the same
 
 OpeningLinePointersLow:
     .lobytes OpeningLinePointers

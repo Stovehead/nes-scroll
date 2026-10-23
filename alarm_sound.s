@@ -30,34 +30,34 @@ AlarmSoundNoise:
     .byte SET_VOLUME, %00000010
     .byte SET_SEPARATION, $00
     .byte PLAY_REST, 2
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 40
     .byte SET_VOLUME, %00000011
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 40
     .byte SET_VOLUME, %00000100
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 40
     .byte SET_VOLUME, %00000101
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 40
     .byte SET_VOLUME, %00000110
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 40
     .byte SET_VOLUME, %00000111
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 40
     .byte SET_VOLUME, %00001000
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 40
     .byte SET_VOLUME, %00001001
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 40
     .byte SET_VOLUME, %00001010
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 40
     .byte SET_VOLUME, %00001011
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 40
     .byte SET_VOLUME, %00001100
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 40
     .byte SET_VOLUME, %00001101
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 40
     .byte SET_VOLUME, %00001110
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 40
     @loop:
     .byte SET_VOLUME, %00001111
-    .byte PLAY_NOTE, 14, 60
+    .byte PLAY_NOTE, 14, 255
     .byte GOTO_LOOP
     .addr @loop
 
