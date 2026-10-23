@@ -51,7 +51,7 @@ SongTrianglePointersHigh:
     SilenceSongNoise, \
     TitleThemeNoise, \
     DeathSoundNoise, \
-    SilenceSongNoise
+    AlarmSoundNoise
 
 SongNoisePointersLow:
     .lobytes SongNoisePointers

@@ -689,6 +689,7 @@ player_deal_damage_after_load_sound_effect:
     lda player_flags, x
     ora #PLAYER_IS_DEAD
     sta player_flags, x
+    inc player_has_no_control
     ldy #Songs::SILENCE
     jsr play_song
     lda #20

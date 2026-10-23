@@ -82,6 +82,12 @@ LIGHTS_OFF = %00000001
     where_to_go_after_fade_out: .res 2
     split_scroll_position = level_flags
     intro_stage = left_object_index
+    current_opening_line = left_object_pointer
+    current_line_character = left_object_pointer + 1
+    character_draw_timer = left_object_index
+    is_drawing_line = right_object_pointer
+    shake_mask = right_object_pointer + 1
+    shake_timer = right_object_index
 
 .bss
     object_ids: .res $10
@@ -280,6 +286,7 @@ main:
     lda controller_input
     and #BUTTON_START
     beq :+
+    inc frame_done
     update_nmi load_level
     jmp :++
     :
@@ -623,6 +630,124 @@ title_screen_logic:
     dec frame_done
     rti
 
+opening_logic:
+    lda screen_fading
+    beq @screen_not_fading
+    dec brightness
+    lda brightness
+    cmp #$F8
+    bcs :+
+    lda #$00
+    sta screen_fading
+    jmp (where_to_go_after_fade_out)
+    @screen_not_fading:
+    jsr read_controllers
+    lda buttons_pressed
+    and #BUTTON_START
+    beq :+
+    lda #$01
+    sta screen_fading
+    lda #<load_level
+    sta where_to_go_after_fade_out
+    lda #>load_level
+    sta where_to_go_after_fade_out + 1
+    :
+    lda is_drawing_line
+    bne @draw_line
+    dec character_draw_timer
+    bne :+
+    inc is_drawing_line
+    lda #4
+    sta character_draw_timer
+    :
+    jmp @after_draw_character
+    @draw_line:
+    ldx current_opening_line
+    cpx #$04
+    bcs @after_draw_character
+    ldy current_line_character
+    dec character_draw_timer
+    bne @after_draw_character
+    lda OpeningLinePointersLow, x
+    sta scratch
+    lda OpeningLinePointersHigh, x
+    sta scratch + 1
+    lda (scratch), y
+    bne :+
+    dec is_drawing_line
+    inc current_opening_line
+    lda #30
+    sta character_draw_timer
+    lda #$00
+    sta current_line_character
+    jmp @after_draw_character
+    :
+    sta $104
+    tya
+    clc
+    adc OpeningStringLocationsLow, x
+    sta $103
+    lda OpeningStringLocationsHigh, x
+    adc #$00
+    sta $102
+    lda #$01
+    sta $100
+    lda #$00
+    sta $101
+    sta $105
+    iny
+    sty current_line_character
+    lda #4
+    sta character_draw_timer
+    @after_draw_character:
+    jsr rand
+    dec shake_timer
+    bne :+
+    lda #200
+    sta shake_timer
+    sec
+    rol shake_mask
+    lda shake_mask
+    cmp #%00000111
+    bcc :+
+    lda #$01
+    sta screen_fading
+    lda #<load_level
+    sta where_to_go_after_fade_out
+    lda #>load_level
+    sta where_to_go_after_fade_out + 1
+    :
+    lda seed
+    and shake_mask
+    bit seed
+    bmi :+
+    sta scratch
+    lda #$00
+    sec
+    sbc scratch
+    :
+    clc
+    adc #$08
+    sta x_scroll
+    lda seed + 1
+    and shake_mask
+    bit seed + 1
+    bmi :+
+    sta scratch
+    lda #$00
+    sec
+    sbc scratch
+    :
+    cmp #240
+    bcc :+
+    sec
+    sbc #$10
+    :
+    sta y_scroll
+    @return:
+    dec frame_done
+    rti
+
 reload_level:
     update_nmi load_level
     rti
@@ -694,7 +819,6 @@ gameplay_logic:
     jsr unpause_audio
     jmp @after_check_pause_button
     @game_not_paused:
-
     inc frame_count
     lda screen_fading
     beq @screen_not_fading
@@ -1177,9 +1301,12 @@ wipe_nmi:
     lda scratch
     cmp #$86
     bcc :+
-    update_nmi load_level
+    lda #GameState::OPENING
+    sta game_state
+    update_nmi opening_setup_nmi
     lda #%00010000
     sta NOISEVOLUME
+    dec frame_done
     rti
     :
     lda #%10110000
@@ -1434,6 +1561,74 @@ title_screen_setup_nmi:
     sta game_state
     update_nmi normal_nmi
     jmp title_screen_logic
+
+opening_setup_nmi:
+    lda current_ppu_ctrl ; Disable NMI and set increment
+    and #%01111011
+    sta current_ppu_ctrl
+    sta PPUCTRL 
+    lda current_ppu_mask
+    and #%11100111
+    sta current_ppu_mask
+    sta PPUMASK
+    lda #$3F    ; Clear other nametable
+    sta PPUADDR
+    lda #$00
+    sta current_opening_line
+    sta current_line_character
+    sta shake_mask
+    sta PPUADDR
+    lda #$06
+    sta background_color
+    sta PPUDATA
+    lda #$20
+    sta PPUADDR
+    lda #$00
+    sta PPUADDR
+    lda #$D4
+    ldy #$0F
+    :
+    ldx #$40
+    :
+    sta PPUDATA
+    dex
+    bne :-
+    dey
+    bne :--
+    lda #$23
+    sta PPUADDR
+    lda #$C0
+    sta PPUADDR
+    lda #$55
+    ldx #$40
+    :
+    sta PPUDATA
+    dex
+    bne :-
+
+    lda #$01
+    sta is_drawing_line
+    lda #5
+    sta character_draw_timer
+    lda #140
+    sta shake_timer
+
+    lda current_ppu_mask
+    ora #%00001000 ; Enable background rendering
+    sta current_ppu_mask
+
+    lda current_ppu_ctrl ; Enable NMI
+    ora #%10000000
+    sta current_ppu_ctrl
+    bit PPUSTATUS
+    sta PPUCTRL
+
+    jsr init_apu
+    ldy #Songs::ALARM_SOUND
+    jsr play_song
+
+    update_nmi normal_nmi
+    rti
 
 .include "audio_engine.s"
 
@@ -2350,6 +2545,7 @@ load_level:
     :
 
     lda #$00 ; Clear object flags
+    sta player_has_no_control
     ldx #32
     :
     dex
@@ -5251,12 +5447,14 @@ TitleScreenPalette:
 .enum GameState
     INTRO
     TITLE_SCREEN
+    OPENING
     GAMEPLAY
 .endenum
 
 .define GameLoopJumpTable \
     intro_logic - 1, \
     title_screen_logic - 1, \
+    opening_logic - 1, \
     gameplay_logic - 1
 
 GameLoopJumpTableLow:
@@ -5299,6 +5497,42 @@ PauseString:
 
 PressStartString:
     asciizoffset "PRESS START", $A5
+
+OpeningLine0:
+    asciizoffset "WARNING", $A5
+
+OpeningLine1:
+    asciizoffset "GRAVITATIONAL ANOMALY DETECTED", $A5
+
+OpeningLine2:
+    asciizoffset "WARP DRIVE DYSFUNCTIONAL", $A5
+
+OpeningLine3:
+    asciizoffset "COLLISION IMMINENT", $A5
+
+.define OpeningLinePointers \
+    OpeningLine0, \
+    OpeningLine1, \
+    OpeningLine2, \
+    OpeningLine3
+
+OpeningLinePointersHigh:
+    .hibytes OpeningLinePointers
+
+OpeningLinePointersLow:
+    .lobytes OpeningLinePointers
+
+.define OpeningStringLocations \
+    $212D, \
+    $21A2, \
+    $21E5, \
+    $2228
+
+OpeningStringLocationsHigh:
+    .hibytes OpeningStringLocations
+
+OpeningStringLocationsLow:
+    .lobytes OpeningStringLocations
 
 LogoTileLayout:
 	.byte $f3, $06, $06, $06, $d9, $d5, $d5, $d5, $db, $d9, $db, $06, $d9, $db ; 13 literals
