@@ -649,7 +649,7 @@ gameplay_logic:
     :
     dec dramatic_pause_timer
     bne :+
-    ldy #$02
+    ldy #Songs::DEATH_SOUND
     jsr play_song
     lda #120
     sta respawn_timer
@@ -1341,7 +1341,7 @@ intro_setup_nmi:
     sta PPUDATA
     dex
     bne :-
-    ldy #$01
+    ldy #Songs::TITLE_THEME
     jsr play_song
     ldx #$01
     lda #103
@@ -2423,7 +2423,7 @@ load_level:
 
     jsr init_apu
 
-    ldy #$01
+    ldy #Songs::TITLE_THEME
     jsr play_song
 
     lda #GameState::GAMEPLAY
@@ -5269,6 +5269,7 @@ GameLoopJumpTableHigh:
 .include "title_theme.s"
 .include "silence_song.s"
 .include "death_sound.s"
+.include "alarm_sound.s"
 .include "sound_effects.s"
 
 .macro asciizoffset Str, Off

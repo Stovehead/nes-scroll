@@ -1,13 +1,21 @@
 .pushseg
 .segment "RODATA"
 
+.enum Songs
+    SILENCE
+    TITLE_THEME
+    DEATH_SOUND
+    ALARM_SOUND
+.endenum
+
 NumSongs:
-    .byte $03
+    .byte $04
 
 .define SongPulse1Pointers \
     SilenceSongPulse1, \
     TitleThemePulse1, \
-    DeathSoundPulse1
+    DeathSoundPulse1, \
+    AlarmSoundPulse1
 
 SongPulse1PointersLow:
     .lobytes SongPulse1Pointers
@@ -18,7 +26,8 @@ SongPulse1PointersHigh:
 .define SongPulse2Pointers \
     SilenceSongPulse2, \
     TitleThemePulse2, \
-    DeathSoundPulse2
+    DeathSoundPulse2, \
+    AlarmSoundPulse2
 
 SongPulse2PointersLow:
     .lobytes SongPulse2Pointers
@@ -29,7 +38,8 @@ SongPulse2PointersHigh:
 .define SongTrianglePointers \
     SilenceSongTriangle, \
     TitleThemeTriangle, \
-    DeathSoundTriangle
+    DeathSoundTriangle, \
+    SilenceSongTriangle
 
 SongTrianglePointersLow:
     .lobytes SongTrianglePointers
@@ -40,7 +50,8 @@ SongTrianglePointersHigh:
 .define SongNoisePointers \
     SilenceSongNoise, \
     TitleThemeNoise, \
-    DeathSoundNoise
+    DeathSoundNoise, \
+    SilenceSongNoise
 
 SongNoisePointersLow:
     .lobytes SongNoisePointers
