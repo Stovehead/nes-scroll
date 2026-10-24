@@ -7,6 +7,7 @@
     POWER_ON
     HURT
     SHOCKED
+    BLIP
 .endenum
 
 .define SoundEffectPointers \
@@ -14,7 +15,8 @@
     SfxPowerOff, \
     SfxPowerOn, \
     SfxHurt, \
-    SfxShocked
+    SfxShocked, \
+    SfxBlip
 
 SoundEffectPointersLow:
     .lobytes SoundEffectPointers
@@ -101,6 +103,12 @@ SfxShocked:
     .byte PLAY_NOTE, 11, 1
     .byte PLAY_NOTE, 128 + 9, 4
     .byte PLAY_NOTE, 11, 1
+    .byte END_SFX
+
+SfxBlip:
+    .byte SET_VOLUME, %00001000
+    .byte SET_SEPARATION, 0
+    .byte PLAY_NOTE, 8, 1
     .byte END_SFX
 
 .popseg

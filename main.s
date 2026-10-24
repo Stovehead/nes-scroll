@@ -699,6 +699,9 @@ opening_logic:
     sty current_line_character
     lda #4
     sta character_draw_timer
+    ldy #SFX::BLIP
+    ldx #$06
+    jsr play_sound_effect
     @after_draw_character:
     jsr rand
     dec shake_timer
