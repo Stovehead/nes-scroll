@@ -8,8 +8,7 @@
     ALARM_SOUND
 .endenum
 
-NumSongs:
-    .byte $04
+NUM_SONGS = 4
 
 .define SongPulse1Pointers \
     SilenceSongPulse1, \

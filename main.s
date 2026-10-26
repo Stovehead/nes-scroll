@@ -904,7 +904,7 @@ gameplay_logic:
     lda current_level
     clc
     adc #$01
-    cmp NumLevels
+    cmp #NUM_LEVELS
     bcc :+
     lda #$00
     :
@@ -949,7 +949,7 @@ gameplay_logic:
     @start_step_code_loop:
     lda object_ids, x
     beq @end_step_code_loop ; Skip object 0 (invalid)
-    cmp NumObjects
+    cmp #NUM_OBJECTS
     bcs @end_step_code_loop ; Skip objects with indices that are out of bounds
     tay
     lda ObjectStepPointersLow, y
@@ -1102,7 +1102,7 @@ build_sprite:
     jmp @end_build_sprite_loop ; Skip if it's hidden
     :
     lda object_current_metasprites, x
-    cmp NumMetaSprites ; Check if the index is out of bounds
+    cmp #NUM_META_SPRITES ; Check if the index is out of bounds
     bcc :+
     jmp @end_build_sprite_loop
     :
@@ -2234,7 +2234,7 @@ read_controllers:
 ; Clobbers A, X, Y, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09
 load_level:
     lda current_level
-    cmp NumLevels
+    cmp #NUM_LEVELS
     bcc :+
     brk ; Go to crash handler if we try to load an invalid level
     :
@@ -2733,7 +2733,7 @@ test_collision:
 ; Object index in X
 play_animation:
     lda object_animations_ids, x
-    cmp NumAnimations ; Bounds check
+    cmp #NUM_ANIMATIONS ; Bounds check
     bcc :+
     rts
     :
@@ -3384,8 +3384,7 @@ LIGHT_SWITCH_OBJECT = 1
 PLAYER_OBJECT = 2
 ELECTRIC_GATE_OBJECT = 3
 
-NumObjects:
-    .byte $04
+NUM_OBJECTS = 4
 .define ObjectStepPointers \
     $0000, \
     light_switch_step, \
@@ -3473,8 +3472,7 @@ ObjectHitboxHeights:
 ; Sprite layout structure:
 ; 1 byte for the number of sprites, 1 byte for width in pixels, 1 byte for height in pixels
 ; For each sprite, 1 byte for index, 1 byte for x offset, 1 byte for y offset, and 1 byte for attributes
-NumMetaSprites:
-    .byte 37
+NUM_META_SPRITES = 37
 .define MetaSpritePointers \
     TestMetaSprite0, \
     TestMetaSprite1, \
@@ -4930,8 +4928,8 @@ Teleport15:
     ANIM_TELEPORT
 .endenum
 
-NumAnimations:
-    .byte $09
+NUM_ANIMATIONS = 9
+
 .define AnimationFramePointers \
     AnimPlayerIdleFrames, \
     AnimPlayerWalkFrames, \
@@ -5056,8 +5054,7 @@ MetaMetaTilesBottomRight:
 MetaMetaTileAttributes:
     .byte $00, $00, $00, $55, $55, $FF, $55, $AA, $AA, $AA, $AA, $AA, $AA, $00, $00, $88, $00, $00, $00, $00, $00, $00, $A0, $A0, $A0, $88, $88, $A8, $2A, $8A, $00, $00, $00, $A0, $55, $A2, $0A, $0A, $0A, $AF, $AF
 
-NumLevels:
-    .byte $02
+NUM_LEVELS = 2
 
 LevelBackgroundColors:
     .byte $26, $0F

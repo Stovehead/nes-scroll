@@ -361,7 +361,7 @@ handle_noise:
 
 ; Song index in Y
 play_song:
-    cpy NumSongs
+    cpy #NUM_SONGS
     bcc :+
     rts
     :
