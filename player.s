@@ -28,7 +28,6 @@ player_init:
 
 .macro get_collision_at_point XOffset, YOffset
     stx scratch + 3
-    sty scratch + 4
     lda object_x_page_subpixels, x ; Get page
     lsr
     lsr
@@ -194,7 +193,6 @@ player_step:
     @after_check_hide_player:
     jmp @after_vertical_collision
     @player_is_not_dead:
-    ldy #$08 ; Limit collision checks to 8 so that we don't infinitely loop
     lda player_y_velocity, x
     bne @after_increment_y_position
     jmp @after_vertical_collision ; Don't check vertical collision if Y velocity is 0
@@ -241,9 +239,6 @@ player_step:
     and #$F0
     sta object_y_positions, x
     jsr player_on_hit_ground
-    ldy scratch + 4
-    dey
-    bne @test_floor_collision_left
     jmp @after_vertical_collision
     @after_test_floor_collision_left:
     @test_floor_collision_right:
@@ -286,9 +281,6 @@ player_step:
     and #$F0
     sta object_y_positions, x
     jsr player_on_hit_ground
-    ldy scratch + 4
-    dey
-    bne @test_floor_collision_right
     jmp @after_vertical_collision
     @after_test_floor_collision_right:
     jmp @after_vertical_collision
@@ -307,9 +299,6 @@ player_step:
     sta object_y_positions, x
     lda #$00
     sta player_y_velocity, x
-    ldy scratch + 4
-    dey
-    bne @test_ceiling_collision_left
     jmp @after_vertical_collision
     @after_test_ceiling_collision_left:
     @test_ceiling_collision_right:
@@ -327,9 +316,6 @@ player_step:
     sta object_y_positions, x
     lda #$00
     sta player_y_velocity, x
-    ldy scratch + 4
-    dey
-    bne @test_ceiling_collision_right
     @after_test_ceiling_collision_right:
     @after_vertical_collision:
     lda player_flags
@@ -505,9 +491,6 @@ player_step:
     sta object_x_positions, x
     lda #$00
     sta player_x_velocity, x
-    ldy scratch + 4
-    dey
-    bne @test_wall_collision_top_right
     jmp @after_test_wall_collision
     @after_test_wall_collision_top_right:
     @test_wall_collision_bottom_right:
@@ -527,9 +510,6 @@ player_step:
     sta object_x_positions, x
     lda #$00
     sta player_x_velocity, x
-    ldy scratch + 4
-    dey
-    bne @test_wall_collision_bottom_right
     jmp @after_test_wall_collision
     @after_test_wall_collision_bottom_right:
     @test_wall_collision_top_left:
@@ -549,9 +529,6 @@ player_step:
     sta object_x_positions, x
     lda #$00
     sta player_x_velocity, x
-    ldy scratch + 4
-    dey
-    bne @test_wall_collision_top_left
     jmp @after_test_wall_collision
     @after_test_wall_collision_top_left:
     @test_wall_collision_bottom_left:
@@ -571,9 +548,6 @@ player_step:
     sta object_x_positions, x
     lda #$00
     sta player_x_velocity, x
-    ldy scratch + 4
-    dey
-    bne @test_wall_collision_bottom_left
     @after_test_wall_collision_bottom_left:
     @after_test_wall_collision:
     lda player_flags, x
