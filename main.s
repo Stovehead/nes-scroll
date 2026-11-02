@@ -5074,7 +5074,7 @@ LevelBackgroundPalette3Color2:
     .byte $0F, $0C
 
 LevelLengths:
-    .byte $05, $20
+    .byte $20, $20
 .define LevelTilePointers \
     Level0Tiles, \
     Level1Tiles
@@ -5099,19 +5099,6 @@ LevelObjectListPointersHigh:
 
     .byte $00, $00, $00, $00 ; Terminator
 Level0ObjectList:
-    .byte $01, $00, $20, $20 ; ID, Page, X Position, Y Position
-    .byte $01, $00, $80, $20
-    .byte $01, $00, $F0, $40
-    .byte $01, $01, $60, $60
-    .byte $01, $02, $10, $20
-    .byte $01, $02, $10, $30
-    .byte $01, $02, $10, $40
-    .byte $01, $02, $10, $50
-    .byte $01, $02, $80, $20
-    .byte $01, $03, $20, $20
-    .byte $01, $03, $40, $20
-    .byte $01, $03, $B0, $20
-    .byte $01, $04, $50, $20
     .byte $00, $00, $00, $00 ; Terminator
 Level1ObjectList:
     .byte ELECTRIC_GATE_OBJECT, $00, $C0, $E0 ; ID, Page, X Position, Y Position
