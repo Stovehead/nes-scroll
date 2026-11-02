@@ -378,7 +378,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="false"/>
    <property name="collision_top" type="bool" value="false"/>
-   <property name="palette" type="int" value="0"/>
+   <property name="palette" type="int" value="2"/>
   </properties>
  </tile>
  <tile id="38">
@@ -388,7 +388,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="false"/>
    <property name="collision_top" type="bool" value="false"/>
-   <property name="palette" type="int" value="0"/>
+   <property name="palette" type="int" value="2"/>
   </properties>
  </tile>
  <tile id="39">
@@ -398,7 +398,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="false"/>
    <property name="collision_top" type="bool" value="false"/>
-   <property name="palette" type="int" value="0"/>
+   <property name="palette" type="int" value="2"/>
   </properties>
  </tile>
  <tile id="40">
@@ -408,7 +408,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="false"/>
    <property name="collision_top" type="bool" value="false"/>
-   <property name="palette" type="int" value="0"/>
+   <property name="palette" type="int" value="2"/>
   </properties>
  </tile>
  <tile id="41">
@@ -418,7 +418,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="42">
@@ -428,7 +428,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="43">
@@ -438,7 +438,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="44">
@@ -448,7 +448,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="45">
@@ -458,7 +458,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="46">
@@ -468,7 +468,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="47">
@@ -478,7 +478,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="48">
@@ -488,7 +488,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="49">
@@ -498,7 +498,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="50">
@@ -508,7 +508,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="51">
@@ -518,7 +518,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="52">
@@ -528,7 +528,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="53">
@@ -538,7 +538,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="54">
@@ -548,7 +548,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="55">
@@ -558,7 +558,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="56">
@@ -568,7 +568,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="57">
@@ -578,7 +578,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="58">
@@ -588,7 +588,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="59">
@@ -598,7 +598,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="60">
@@ -608,7 +608,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="61">
@@ -618,7 +618,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="62">
@@ -628,7 +628,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="63">
@@ -638,7 +638,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="64">
@@ -648,7 +648,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="65">
@@ -658,7 +658,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="1"/>
+   <property name="palette" type="int" value="0"/>
   </properties>
  </tile>
  <tile id="66">
@@ -668,7 +668,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="2"/>
+   <property name="palette" type="int" value="1"/>
   </properties>
  </tile>
  <tile id="67">
@@ -678,7 +678,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="2"/>
+   <property name="palette" type="int" value="1"/>
   </properties>
  </tile>
  <tile id="68">
@@ -688,7 +688,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="2"/>
+   <property name="palette" type="int" value="1"/>
   </properties>
  </tile>
  <tile id="69">
@@ -698,7 +698,7 @@
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
    <property name="collision_right" type="bool" value="true"/>
    <property name="collision_top" type="bool" value="true"/>
-   <property name="palette" type="int" value="2"/>
+   <property name="palette" type="int" value="1"/>
   </properties>
  </tile>
  <tile id="70">
