@@ -17,13 +17,17 @@ var action = tiled.registerAction("BuildMetatiles", function(action) {
     let metamap = tiled.open(metatileset.imageFileName).layerAt(0);
     for(let y = 0; y < metamap.height; y += 2) {
         for(let x = 0; x < metamap.width; x += 2) {
+            if(!metamap.tileAt(x, y))
+                continue
             metaTileTopLeft.push(metamap.tileAt(x, y).id);
             metaTileTopRight.push(metamap.tileAt(x + 1, y).id);
             metaTileBottomLeft.push(metamap.tileAt(x, y + 1).id);
             metaTileBottomRight.push(metamap.tileAt(x + 1, y + 1).id);
         }
     }
-    for(let i = 0; i < metatileset.tiles.length; i++) {
+    for(let i = 0; i < metaTileTopLeft.length; i++) {
+        if(!metatileset.tiles[i])
+            continue;
         metaTilePalettes.push(metatileset.tiles[i].property("palette"));
         let collision = 0;
         if(metatileset.tiles[i].property("collision_top")) {
@@ -45,6 +49,8 @@ var action = tiled.registerAction("BuildMetatiles", function(action) {
     }
     for(let y = 0; y < map.height; y += 2) {
         for(let x = 0; x < map.width; x += 2) {
+            if(!layer.tileAt(x, y))
+                continue;
             metaMetaTileTopLeft.push(layer.tileAt(x, y).id);
             metaMetaTileTopRight.push(layer.tileAt(x + 1, y).id);
             metaMetaTileBottomLeft.push(layer.tileAt(x, y + 1).id);
