@@ -10,7 +10,9 @@ var action = tiled.registerAction("ShiftTiles", function(action) {
     fromBox.decimals = 0;
     toBox.decimals = 0;
     shiftBox.decimals = 0;
-    toBox.maximum = 99999;
+    toBox.maximum = 256;
+    shiftBox.maximum = 256;
+    shiftBox.minimum = -256;
     fromBox.valueChanged.connect(function(value) { from = value; });
     toBox.valueChanged.connect(function(value) { to = value; });
     shiftBox.valueChanged.connect(function(value) { shift = value; });
@@ -22,9 +24,6 @@ var action = tiled.registerAction("ShiftTiles", function(action) {
     }
     let layer = map.layerAt(0);
     let layerEdit = layer.edit();
-    tiled.log(from);
-    tiled.log(to);
-    tiled.log(shift);
     for (let x = 0; x < layer.width; ++x) {
         for (let y = 0; y < layer.height; ++y) {
             let tile = layer.tileAt(x, y);

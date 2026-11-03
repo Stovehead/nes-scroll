@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.12.2" name="meta" tilewidth="16" tileheight="16" tilecount="256" columns="16">
- <image source="meta.tmx" width="256" height="256"/>
+<tileset version="1.10" tiledversion="1.12.2" name="meta" tilewidth="16" tileheight="16" tilecount="256" columns="256">
+ <image source="meta.tmx" width="4096" height="16"/>
  <tile id="0">
   <properties>
    <property name="collision_bottom" type="bool" value="false"/>
@@ -713,22 +713,22 @@
  </tile>
  <tile id="71">
   <properties>
-   <property name="collision_bottom" type="bool" value="false"/>
-   <property name="collision_left" type="bool" value="false"/>
+   <property name="collision_bottom" type="bool" value="true"/>
+   <property name="collision_left" type="bool" value="true"/>
    <property name="collision_only_when_lights_on" type="bool" value="false"/>
-   <property name="collision_right" type="bool" value="false"/>
-   <property name="collision_top" type="bool" value="false"/>
-   <property name="palette" type="int" value="0"/>
+   <property name="collision_right" type="bool" value="true"/>
+   <property name="collision_top" type="bool" value="true"/>
+   <property name="palette" type="int" value="1"/>
   </properties>
  </tile>
  <tile id="72">
   <properties>
    <property name="collision_bottom" type="bool" value="false"/>
    <property name="collision_left" type="bool" value="false"/>
-   <property name="collision_only_when_lights_on" type="bool" value="false"/>
+   <property name="collision_only_when_lights_on" type="bool" value="true"/>
    <property name="collision_right" type="bool" value="false"/>
-   <property name="collision_top" type="bool" value="false"/>
-   <property name="palette" type="int" value="0"/>
+   <property name="collision_top" type="bool" value="true"/>
+   <property name="palette" type="int" value="3"/>
   </properties>
  </tile>
  <tile id="73">
