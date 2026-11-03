@@ -5110,6 +5110,9 @@ Level1ObjectList:
     .byte ELECTRIC_GATE_OBJECT, $05, $28, $B0
     .byte ELECTRIC_GATE_OBJECT, $08, $28, $10
     .byte LIGHT_SWITCH_OBJECT, $08, $54, $D0
+    .byte LIGHT_SWITCH_OBJECT, $09, $EC, $48
+    .byte ELECTRIC_GATE_OBJECT, $0A, $08, $40
+    .byte LIGHT_SWITCH_OBJECT, $0B, $6D, $08
     .byte $00, $00, $00, $00 ; Terminator
 
 TitleScreenPalette:

@@ -193,6 +193,11 @@ player_step:
     @after_check_hide_player:
     jmp @after_vertical_collision
     @player_is_not_dead:
+    lda controller_input
+    and #BUTTON_B
+    beq :+
+    jmp @after_vertical_collision
+    :
     lda player_y_velocity, x
     bne @after_increment_y_position
     jmp @after_vertical_collision ; Don't check vertical collision if Y velocity is 0
@@ -340,6 +345,20 @@ player_step:
     lda #ANIM_PLAYER_WALK ; If we're on the ground and pressing right, play the walk animation
     sta scratch + 2
     :
+    lda controller_input
+    and #BUTTON_B
+    beq :++
+    lda player_x_velocity, x
+    clc
+    adc #PLAYER_ACCELERATION
+    cmp #128
+    bcs :+
+    cmp #64 ; Cap horizontal speed
+    bcc :+
+    lda #64
+    :
+    jmp @after_determine_x_velocity
+    :
     lda player_x_velocity, x
     clc
     adc #PLAYER_ACCELERATION
@@ -356,6 +375,20 @@ player_step:
     beq :+
     lda #ANIM_PLAYER_WALK
     sta scratch + 2
+    :
+    lda controller_input
+    and #BUTTON_B
+    beq :++
+    lda player_x_velocity, x
+    sec
+    sbc #PLAYER_ACCELERATION
+    cmp #128
+    bcc :+
+    cmp #256 - 64
+    bcs :+
+    lda #256 - 64
+    :
+    jmp @after_determine_x_velocity
     :
     lda player_x_velocity, x
     sec
@@ -474,6 +507,11 @@ player_step:
     jmp player_determine_animation
     :
     ldy #$08
+    lda controller_input
+    and #BUTTON_B
+    beq :+
+    jmp @after_test_wall_collision
+    :
     @test_wall_collision_top_right:
     get_collision_at_point 13, 2
     ldx scratch + 3
